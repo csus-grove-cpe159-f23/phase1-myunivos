@@ -37,7 +37,23 @@ void kernel_init(void) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_log_error(char *msg, ...) {
-    // Implement me
+    // Return if our log level is less than error
+    if (kernel_log_level < KERNEL_LOG_LEVEL_ERROR) {
+        return;
+    }
+
+    // Obtain the list of variable arguments
+    va_list args;
+
+    // Indicate this is an 'error' type of message
+    printf("error: ");
+
+    // Pass the message variable arguments to vprintf
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("\n");
 }
 
 /**
@@ -47,7 +63,23 @@ void kernel_log_error(char *msg, ...) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_log_warn(char *msg, ...) {
-    // Implement me
+    // Return if our log level is less than warning
+    if (kernel_log_level < KERNEL_LOG_LEVEL_WARN) {
+        return;
+    }
+
+    // Obtain the list of variable arguments
+    va_list args;
+
+    // Indicate this is a 'warning' type of message
+    printf("warning: ");
+
+    // Pass the message variable arguments to vprintf
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("\n");
 }
 
 /**
@@ -83,7 +115,23 @@ void kernel_log_info(char *msg, ...) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_log_debug(char *msg, ...) {
-    // Implement me
+    // Return if our log level is less than debug
+    if (kernel_log_level < KERNEL_LOG_LEVEL_DEBUG) {
+        return;
+    }
+
+    // Obtain the list of variable arguments
+    va_list args;
+
+    // Indicate this is a 'debug' type of message
+    printf("debug: ");
+
+    // Pass the message variable arguments to vprintf
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("\n");
 }
 
 /**
@@ -93,7 +141,23 @@ void kernel_log_debug(char *msg, ...) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_log_trace(char *msg, ...) {
-    // Implement me
+    // Return if our log level is less than trace
+    if (kernel_log_level < KERNEL_LOG_LEVEL_TRACE) {
+        return;
+    }
+
+    // Obtain the list of variable arguments
+    va_list args;
+
+    // Indicate this is a 'trace' type of message
+    printf("trace: ");
+
+    // Pass the message variable arguments to vprintf
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("\n");
 }
 
 /**
@@ -106,6 +170,28 @@ void kernel_log_trace(char *msg, ...) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_panic(char *msg, ...) {
+    // Log the panic message to the debug console (printf)
+
+    // Obtain the list of variable arguments
+    va_list args;
+    // Indicate this is a 'panic' type of message
+    printf("panic: ");
+
+    // Pass the message variable arguments to vprintf
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("\n");
+
+    // Log the panic message to the VGA display
+    vga_printf("panic: ");
+    va_start(args, msg);
+    vga_printf(msg, args);
+    va_end(args);
+
+    vga_printf("\n");
+
     // Trigger a breakpoint to inspect what caused the panic
     kernel_break();
 
@@ -174,6 +260,31 @@ void kernel_command(char c) {
         //  - Clear the screen (k)
         //  - Increase the kernel log level (+)
         //  - Decrease the kernel log level (-)
+        /*case 't':
+        case 'T':
+            // Toggle VGA text mode cursor
+            vga_cursor_toggle();
+            break;*/
+
+        case 'k':
+        case 'K':
+            // Clear the VGA display
+            vga_clear();
+            break;
+
+        case '+':
+            // Increase the kernel log level
+            if (kernel_log_level < KERNEL_LOG_LEVEL_ALL) {
+                kernel_log_level++;
+            }
+            break;
+
+        case '-':
+            // Decrease the kernel log level
+            if (kernel_log_level > KERNEL_LOG_LEVEL_NONE) {
+                kernel_log_level--;
+            }
+            break;
 
         case KEY_ESCAPE:
             // Exit the OS if we press escape three times in a row
