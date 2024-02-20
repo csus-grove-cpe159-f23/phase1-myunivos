@@ -28,7 +28,7 @@ enum vga_color{
     PINK = 13,
     YELLOW = 14,
     WHITE = 15
-}
+};
 /**
  * Global variables in this file scope
  */
@@ -56,9 +56,9 @@ void vga_clear(void) {
     // Clear all character data, set the foreground and background colors
     // Set the cursor position to the top-left corner (0, 0)
     int row, col;
-    for(row = 0; row < VGA_HEIGHT; row++){
-        for (col = 0; col < VGA_WIDTH; col++){
-            vga_putc(row, col, BLACK, WHITE, ' ');
+    for(row = 0; row < VGA_HEIGHT; row++) {
+        for (col = 0; col < VGA_WIDTH; col++) {
+            vga_putc_at(row, col, BLACK, WHITE, ' ');
         }
     }
 }
@@ -222,8 +222,6 @@ void vga_cursor_update(void) {
     outportb(0x3D5, (unsigned char)((position >> 8) & 0xFF));
 }
 
-}
-
 /**
  * Sets the current row/column position
  *
@@ -334,7 +332,7 @@ void vga_setc(unsigned char c) {
  *
  * @param c - character to print
  */
-void vga_putc(int row, int col, int bg, int fg, unsigned char c) {
+void vga_putc( unsigned char c) {
         switch (c) {
         case '\n':
             current_row++;
