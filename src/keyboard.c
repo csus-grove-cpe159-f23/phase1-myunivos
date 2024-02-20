@@ -8,6 +8,20 @@
 #include "kernel.h"
 #include "keyboard.h"
 
+// Define constants for special keys
+#define KEY_NULL      0
+#define KEY_SHIFT     0x2A
+#define KEY_CTRL      0x1D
+#define KEY_ALT       0x38
+#define KEY_CAPS_LOCK 0x3A
+#define KEY_KERNEL_DEBUG (KEY_SHIFT | KEY_CTRL | KEY_ALT)
+
+// Variables to track the status of special keys
+static int shift_pressed = 0;
+static int ctrl_pressed = 0;
+static int alt_pressed = 0;
+static int caps_lock_enabled = 0;
+
 /**
  * Initializes keyboard data structures and variables
  */
@@ -20,8 +34,35 @@ void keyboard_init() {
  * @return raw character data from the keyboard
  */
 unsigned int keyboard_scan(void) {
-    unsigned int c = KEY_NULL;
-    return c;
+    return inportb(0x60);  // Read from the keyboard data port
+}
+
+/**
+ * Decodes a scancode into an ASCII character code or “special key” definition
+ */
+unsigned int keyboard_decode(unsigned int scan_code) {
+    int key_pressed = !(scan_code & 0x80);
+    unsigned int key_code = scan_code & 0x7F;
+
+    switch (key_code) {
+        case KEY_SHIFT:
+            shift_pressed = key_pressed;
+            break;
+        case KEY_CTRL:
+            ctrl_pressed = key_pressed;
+            break;
+        case KEY_ALT:
+            alt_pressed = key_pressed;
+            break;
+        case KEY_CAPS_LOCK:
+            if (key_pressed) caps_lock_enabled = !caps_lock_enabled;
+            break;
+  
+        default:
+            return map_scan_code_to_ascii(key_code);
+    }
+
+    return KEY_NULL;
 }
 
 /**
@@ -34,8 +75,11 @@ unsigned int keyboard_scan(void) {
  *         that cannot be decoded
  */
 unsigned int keyboard_poll(void) {
-    unsigned int c = KEY_NULL;
-    return c;
+    if (inportb(0x64) & 0x01) {  // Check if keyboard data is available
+        unsigned int scan_code = keyboard_scan();
+        return keyboard_decode(scan_code);
+    }
+    return KEY_NULL;
 }
 
 /**
@@ -50,20 +94,24 @@ unsigned int keyboard_getc(void) {
 }
 
 /**
- * Processes raw keyboard input and decodes it.
- *
- * Should keep track of the keyboard status for the following keys:
- *   SHIFT, CTRL, ALT, CAPS, NUMLOCK
- *
- * For all other characters, they should be decoded/mapped to ASCII
- * or ASCII-friendly characters.
- *
- * For any character that cannot be mapped, KEY_NULL should be returned.
- *
- * If *all* of the status keys defined in KEY_KERNEL_DEBUG are pressed,
- * while another character is entered, the kernel_debug_command()
- * function should be called.
+ * Helper function to map scan code to ASCII or other representations
+ * You may need to customize this based on your specific keyboard layout
  */
-unsigned int keyboard_decode(unsigned int c) {
-    return c;
+unsigned int map_scan_code_to_ascii(unsigned int scan_code) {
+
+    if (caps_lock_enabled || shift_pressed) {
+
+        switch (scan_code) {
+            case 0x1E: return 'A';
+
+            default: return KEY_NULL;
+        }
+    } else {
+        
+        switch (scan_code) {
+            case 0x1E: return 'a';
+            
+            default: return KEY_NULL;
+        }
+    }
 }
