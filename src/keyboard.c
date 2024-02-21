@@ -23,9 +23,6 @@ static int ctrl_pressed = 0;
 static int alt_pressed = 0;
 static int caps_lock_enabled = 0;
 
-// Declare the helper function
-unsigned int map_scan_code_to_ascii(unsigned int scan_code);
-
 /**
  * Initializes keyboard data structures and variables
  */
@@ -61,8 +58,10 @@ unsigned int keyboard_decode(unsigned int scan_code) {
         case KEY_CAPS_LOCK:
             if (key_pressed) caps_lock_enabled = !caps_lock_enabled;
             break;
+        // Add more cases for other special keys...
         default:
-            return map_scan_code_to_ascii(key_code);
+            // Implement custom logic for decoding other keys if needed
+            return KEY_NULL;
     }
 
     return KEY_NULL;
@@ -94,24 +93,4 @@ unsigned int keyboard_getc(void) {
     unsigned int c = KEY_NULL;
     while ((c = keyboard_poll()) == KEY_NULL);
     return c;
-}
-
-/**
- * Helper function to map scan code to ASCII or other representations
- * You may need to customize this based on your specific keyboard layout
- */
-unsigned int map_scan_code_to_ascii(unsigned int scan_code) {
-    // Basic ASCII mapping for illustrative purposes
-    if (caps_lock_enabled || shift_pressed) {
-        switch (scan_code) {
-            case 0x1E: return 'A';
-            default: return KEY_NULL;
-        }
-    } else {
-        switch (scan_code) {
-            case 0x1E: return 'a';
-            // Add more cases for other lowercase characters...
-            default: return KEY_NULL;
-        }
-    }
 }
