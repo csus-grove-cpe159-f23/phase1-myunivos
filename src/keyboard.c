@@ -15,6 +15,9 @@ static int ctrl_pressed = 0;
 static int alt_pressed = 0;
 static int caps_lock_enabled = 0;
 
+// Declare the inportb function
+unsigned char inportb(unsigned short port);
+
 /**
  * Initializes keyboard data structures and variables
  */
