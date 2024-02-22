@@ -9,6 +9,12 @@
 #include "keyboard.h"
 #include "bit.h"
 
+#define KEY_SHIFT     0x2A
+#define KEY_CTRL      0x1D
+#define KEY_ALT       0x38
+#define KEY_CAPS_LOCK 0x3A
+#define KEY_KERNEL_DEBUG (KEY_SHIFT | KEY_CTRL | KEY_ALT)
+
 // Variables to track the status of special keys
 static int shift_pressed = 0;
 static int ctrl_pressed = 0;
