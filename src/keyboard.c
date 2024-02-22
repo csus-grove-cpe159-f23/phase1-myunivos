@@ -32,7 +32,7 @@ unsigned char inportb(unsigned short port);
  * Initializes keyboard data structures and variables
  */
 void keyboard_init() {
-    // Additional initialization can be added if needed
+    kernel_log_info("Initializing keyboard driver");
 }
 
 /**
