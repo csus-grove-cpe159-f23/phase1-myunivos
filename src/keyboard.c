@@ -13,6 +13,7 @@
 #define KEY_CTRL      0x1D
 #define KEY_ALT       0x38
 #define KEY_CAPS_LOCK 0x3A
+#define KEY_NUMLOCK   0x45
 #define KEY_KERNEL_DEBUG (KEY_SHIFT | KEY_CTRL | KEY_ALT)
 
 // Variables to track the status of special keys
@@ -61,6 +62,9 @@ unsigned int keyboard_decode(unsigned int scan_code) {
             break;
         case KEY_CAPS_LOCK:
             if (key_pressed) caps_lock_enabled = !caps_lock_enabled;
+            break;
+        case KEY_NUMLOCK:
+            // Handle NUMLOCK key here if needed
             break;
         // Add more cases for other special keys...
         default:
@@ -120,12 +124,18 @@ unsigned int keyboard_decode(unsigned int scan_code) {
  * @return decoded character or KEY_NULL (0) for any character
  *         that cannot be decoded
  */
+<<<<<<< HEAD
 
 /**
+=======
+// keyboard.c
+>>>>>>> 27e4a08ff47f916ab9b029323b6216e5a61be003
 unsigned int keyboard_poll(void) {
     if (inportb(0x64) & 0x01) {  // Check if keyboard data is available
         unsigned int scan_code = keyboard_scan();
-        return keyboard_decode(scan_code);
+        unsigned int decoded_key = keyboard_decode(scan_code);
+        printf("Scancode: %x, Decoded Key: %x\n", scan_code, decoded_key);  // Add debugging output
+        return decoded_key;
     }
     return KEY_NULL;
 }
@@ -144,6 +154,7 @@ unsigned int keyboard_poll(void) {
     }
     return KEY_NULL;
 }
+
 
 /**
  * Blocks until a keyboard character has been entered
