@@ -21,6 +21,8 @@ static int ctrl_pressed = 0;
 static int alt_pressed = 0;
 static int caps_lock_enabled = 0;
 
+//ASCII mapping for scancodes
+
 // Declare the inportb function
 unsigned char inportb(unsigned short port);
 
@@ -42,6 +44,7 @@ unsigned int keyboard_scan(void) {
 /**
  * Decodes a scancode into an ASCII character code or “special key” definition
  */
+/**
 unsigned int keyboard_decode(unsigned int scan_code) {
     int key_pressed = !(scan_code & 0x80);
     unsigned int key_code = scan_code & 0x7F;
@@ -67,6 +70,46 @@ unsigned int keyboard_decode(unsigned int scan_code) {
 
     return KEY_NULL;
 }
+**/
+unsigned int keyboard_decode(unsigned int scan_code) {
+    static const char scancode_to_char[] = {
+        0, 0, '1', '2', '3', '4', '5', '6', '7', '8',  /* 9 */
+        '9', '0', '-', '=', 0, 0, 'q', 'w', 'e', 'r',  /* 19 */
+        't', 'y', 'u', 'i', 'o', 'p', '[', ']', 0, 0,   /* 29 */
+        'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', /* 39 */
+        '\'', '`', 0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', /* 49 */
+        'm', ',', '.', '/', 0, '*', 0, ' '               /* 57 */
+    };
+
+    int key_pressed = !(scan_code & 0x80);
+    unsigned int key_code = scan_code & 0x7F;
+
+    // Handle special keys (Shift, Ctrl, Alt, etc.)
+    switch (key_code) {
+        case KEY_SHIFT:
+            shift_pressed = key_pressed;
+            return KEY_NULL;
+        case KEY_CTRL:
+            ctrl_pressed = key_pressed;
+            return KEY_NULL;
+        case KEY_ALT:
+            alt_pressed = key_pressed;
+            return KEY_NULL;
+        case KEY_CAPS_LOCK:
+            if (key_pressed) caps_lock_enabled = !caps_lock_enabled;
+            return KEY_NULL;
+       // case KEY_NUMLOCK:
+            // Handle NUMLOCK key here if needed
+         //   return KEY_NULL;
+        default:
+            // Check if the key code is within the range of our mapping
+            if (key_code < sizeof(scancode_to_char)) {
+                // Return the corresponding ASCII character
+                return scancode_to_char[key_code];
+            }
+            return KEY_NULL;
+    }
+}
 
 /**
  * Polls for a keyboard character to be entered.
@@ -77,10 +120,27 @@ unsigned int keyboard_decode(unsigned int scan_code) {
  * @return decoded character or KEY_NULL (0) for any character
  *         that cannot be decoded
  */
+
+/**
 unsigned int keyboard_poll(void) {
     if (inportb(0x64) & 0x01) {  // Check if keyboard data is available
         unsigned int scan_code = keyboard_scan();
         return keyboard_decode(scan_code);
+    }
+    return KEY_NULL;
+}
+**/
+unsigned int keyboard_poll(void) {
+    if (inportb(KBD_PORT_STAT) & 0x01) {  // Check if keyboard data is available
+        unsigned int scan_code = keyboard_scan();
+        unsigned int decoded_key = keyboard_decode(scan_code);
+
+        // If decoded_key is a printable ASCII character, display it on the screen
+        if (decoded_key >= 0x20 && decoded_key <= 0x7E) {
+            vga_putc(decoded_key);  // Display the character using VGA driver
+        }
+
+        return decoded_key;
     }
     return KEY_NULL;
 }
