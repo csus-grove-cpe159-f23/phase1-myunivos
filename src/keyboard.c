@@ -13,7 +13,7 @@
 #define KEY_CTRL      0x1D
 #define KEY_ALT       0x38
 #define KEY_CAPS_LOCK 0x3A
-#define KEY_NUMLOCK   0x45
+#define KEY_NUMLOCK 0x45 // Assuming 0x45 is the scancode for Num Lock
 #define KEY_KERNEL_DEBUG (KEY_SHIFT | KEY_CTRL | KEY_ALT)
 
 // Variables to track the status of special keys
@@ -21,6 +21,7 @@ static int shift_pressed = 0;
 static int ctrl_pressed = 0;
 static int alt_pressed = 0;
 static int caps_lock_enabled = 0;
+static int numlock_active = 0; 
 
 //ASCII mapping for scancodes
 
@@ -100,11 +101,15 @@ unsigned int keyboard_decode(unsigned int scan_code) {
             alt_pressed = key_pressed;
             return KEY_NULL;
         case KEY_CAPS_LOCK:
-            if (key_pressed) caps_lock_enabled = !caps_lock_enabled;
+            if (key_pressed){
+                caps_lock_enabled = !caps_lock_enabled;
+            }
             return KEY_NULL;
-       // case KEY_NUMLOCK:
-            // Handle NUMLOCK key here if needed
-         //   return KEY_NULL;
+        case KEY_NUMLOCK:
+            if (key_pressed){
+                numlock_active = !numlock_active;
+            }
+            return KEY_NULL;
         default:
             // Check if the key code is within the range of our mapping
             if (key_code < sizeof(scancode_to_char)) {
