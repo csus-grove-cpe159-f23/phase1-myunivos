@@ -4,7 +4,8 @@
  *
  * Keyboard driver implementation
  */
-
+#include "io.h"
+#include "kernel.h"
 #include "vga.h"
 #include "keyboard.h"
 #include "bit.h"
