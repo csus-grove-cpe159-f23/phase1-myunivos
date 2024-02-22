@@ -124,7 +124,6 @@ unsigned int keyboard_decode(unsigned int scan_code) {
  * @return decoded character or KEY_NULL (0) for any character
  *         that cannot be decoded
  */
-<<<<<<< HEAD
 
 /**
 =======
