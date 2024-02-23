@@ -10,7 +10,7 @@
 #     Can be overridden via an environment variable, such as:
 #        OS_NAME=SpedeOS make
 #------------------------------------------------------------------------------
-OS_NAME ?= MyOS
+OS_NAME ?= MyUnivOS
 
 #------------------------------------------------------------------------------
 # (2) Specify additional compiler or linker flags.
