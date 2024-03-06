@@ -12,7 +12,14 @@
  * @return number of bits that are set
  */
 int bit_count(int value) {
-    return 0;
+    int count = 0;
+    while (value) {
+        if (value & 1) {
+            ++count;
+        }
+        value >>= 1;
+    }
+    return count;
 }
 
 /**
@@ -22,7 +29,8 @@ int bit_count(int value) {
  * @return 1 if set, 0 if not set
  */
 int bit_test(int value, int bit) {
-    return value;
+    int num = value >> bit;
+    return (num & 1);
 }
 
 /**
@@ -31,7 +39,7 @@ int bit_test(int value, int bit) {
  * @param bit - which bit to set
  */
 int bit_set(int value, int bit) {
-    return value;
+    return ((1 << bit) | value);
 }
 
 /**
@@ -40,7 +48,7 @@ int bit_set(int value, int bit) {
  * @param bit - which bit to clear
  */
 int bit_clear(int value, int bit) {
-    return value;
+    return (value & ~(1 << bit));
 }
 
 /**
@@ -49,5 +57,5 @@ int bit_clear(int value, int bit) {
  * @param bit - which bit to toggle
  */
 int bit_toggle(int value, int bit) {
-    return value;
+    return (value ^ (1 << bit));
 }
