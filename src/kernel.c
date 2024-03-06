@@ -257,14 +257,19 @@ void kernel_command(char c) {
             break;
 
         // Add new commands to:
+        //  - Toggle the vga text mode cursor
         //  - Clear the screen (k)
         //  - Increase the kernel log level (+)
         //  - Decrease the kernel log level (-)
-        /*case 't':
+        case 't':
         case 'T':
             // Toggle VGA text mode cursor
-            vga_cursor_toggle();
-            break;*/
+            if (vga_cursor_enabled()) {
+                vga_cursor_disable(); // If enabled, disable the cursor
+            } else {
+                vga_cursor_enable();  // If disabled, enable the cursor
+            }
+            break;
 
         case 'k':
         case 'K':
@@ -316,4 +321,3 @@ void kernel_exit(void) {
     // Exit
     exit(0);
 }
-
