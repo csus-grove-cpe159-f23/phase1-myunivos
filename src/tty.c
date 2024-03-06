@@ -2,7 +2,8 @@
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
  *
- * TTY Definitions
+ * TTY Definitions below
+ *
  */
 
 #include <spede/string.h>
