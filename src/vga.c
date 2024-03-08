@@ -43,13 +43,8 @@ int vga_scroll = 0;
 void vga_init(void) {
     kernel_log_info("Initializing VGA driver");
 
-    if (vga_cursor) {
-        // Enable the cursor
-        vga_cursor_enable();
-    } else {
-        // Disable the cursor
-        vga_cursor_disable();
-    }
+    //Disable the cursor
+    vga_cursor_disable();
 
     // Clear the screen
     vga_clear();
