@@ -119,10 +119,18 @@ void interrupts_irq_register(int irq, void (*entry)(), void (*handler)()) {
  * @note IRQs > 0xf will be remapped
  */
 void pic_irq_enable(int irq) {
-    // Determine the PIC to be used for the given IRQ number
-    // Read the current mask
-    // Clear the associated bit in the mask to enable the IRQ
-    // Write the mask out to the PIC
+    unsigned short port;
+    unsigned char mask;
+
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    mask = inb(port) & ~(1 << irq);
+    outb(port, mask);
 }
 
 /**
@@ -131,10 +139,18 @@ void pic_irq_enable(int irq) {
  * @param irq - IRQ that should be disabled
  */
 void pic_irq_disable(int irq) {
-    // Determine the PIC to be used for the given IRQ number
-    // Read the current mask
-    // Set the associated bit in the mask to disable the IRQ
-    // Write the mask back to the PIC
+    unsigned short port;
+    unsigned char mask;
+
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    mask = inb(port) | (1 << irq);
+    outb(port, mask);
 }
 
 /**
@@ -144,22 +160,32 @@ void pic_irq_disable(int irq) {
  * @return - 1 if enabled, 0 if disabled
  */
 int pic_irq_enabled(int irq) {
-    // Determine the PIC to be used and adjust the irq number
-    // Read the current mask from the data port
-    // check the associated bit and return if the IRQ is enabled
-    return 0;
+    unsigned short port;
+    unsigned char mask;
+
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    mask = inb(port);
+    return (mask & (1 << irq)) ? 1 : 0;
 }
 
 /**
  * Dismisses an interrupt by sending the EOI command to the appropriate
- * PIC device(s). If the IRQ is assosciated with the secondary PIC, the
- * EOI command must be issued to both since the PICs are dasiy-chained.
+ * PIC device(s). If the IRQ is associated with the secondary PIC, the
+ * EOI command must be issued to both since the PICs are daisy-chained.
  *
  * @param irq - IRQ to be dismissed
  */
 void pic_irq_dismiss(int irq) {
-    // Send EOI to the secondary PIC, if needed
-    // Send EOI to the primary PIC, if needed
+    if (irq >= 8) {
+        outb(PIC2_CMD, PIC_EOI);
+    }
+    outb(PIC1_CMD, PIC_EOI);
 }
 
 /**
@@ -173,4 +199,3 @@ void interrupts_init() {
 
     memset(irq_handlers, 0, sizeof(irq_handlers));
 }
-
