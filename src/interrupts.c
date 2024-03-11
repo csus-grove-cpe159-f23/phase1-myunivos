@@ -2,7 +2,7 @@
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
  *
- * Timer Implementation
+ * Interrupts Implementation
  */
 #include <spede/stdio.h>
 #include <spede/string.h>
@@ -10,147 +10,74 @@
 
 #include "interrupts.h"
 #include "kernel.h"
-#include "queue.h"
-#include "timer.h"
 
 /**
- * Data structures
+ * Registers an IRQ with the Interrupt Descriptor Table (IDT)
+ * @param irq_num - the IRQ number to register
+ * @param isr_func - the ISR function pointer
+ * @param irq_handler - the IRQ handler function pointer
  */
-// Timer data structure
-typedef struct timer_t {
-    void (*callback)(); // Function to call when the interval occurs
-    int interval;       // Interval in which the timer will be called
-    int repeat;         // Indicate how many intervals to repeat (-1 should repeat forever)
-} timer_t;
-
-/**
- * Variables
- */
-
-// Number of timer ticks that have occurred
-int timer_ticks;
-
-// Timers table; each item in the array is a timer_t struct
-timer_t timers[TIMERS_MAX];
-
-// Timer allocator; used to allocate indexes into the timers table
-queue_t timer_allocator;
-
-/**
- * Registers a new callback to be called at the specified interval
- * @param func_ptr - function pointer to be called
- * @param interval - number of ticks before the callback is performed
- * @param repeat   - Indicate how many intervals to repeat (-1 should repeat forever)
- *
- * @return the allocated timer id or -1 for errors
- */
-int timer_callback_register(void (*func_ptr)(), int interval, int repeat) {
-    int timer_id = -1;
-
-    if (!func_ptr) {
-        kernel_log_error("timer: invalid function pointer");
-        return -1;
+void interrupts_irq_register(int irq_num, void *isr_func, void *irq_handler) {
+    if (irq_num < 0 || irq_num >= IDT_SIZE) {
+        kernel_log_error("interrupts: invalid IRQ number: %d", irq_num);
+        return;
     }
 
-    // Obtain a timer id
-    if (queue_out(&timer_allocator, &timer_id) != 0) {
-        kernel_log_error("timer: unable to allocate a timer");
-        return -1;
-    }
+    // Set the ISR entry in the IDT
+    fill_gate(&idt[irq_num], (int)isr_func, get_cs(), ACC_INTR_GATE, 0);
 
-    // Set the callback function for the timer
-    timers[timer_id].callback = func_ptr;
-    // Set the interval value for the timer
-    timers[timer_id].interval = interval;
-    // Set the repeat value for the timer
-    timers[timer_id].repeat = repeat;
-
-    return timer_id;
+    // Set the IRQ handler in the array
+    irq_routines[irq_num] = irq_handler;
 }
 
 /**
- * Unregisters the specified callback
- * @param id
- *
- * @return 0 on success, -1 on error
+ * Enables interrupts via the Programmable Interrupt Controller (PIC)
  */
-int timer_callback_unregister(int id) {
-    if (id < 0 || id >= TIMERS_MAX) {
-        kernel_log_error("timer: callback id out of range: %d", id);
-        return -1;
-    }
-
-    // Clear the timer entry
-    memset(&timers[id], 0, sizeof(timer_t));
-
-    if (queue_in(&timer_allocator, id) != 0) {
-        kernel_log_error("timer: unable to queue timer entry back to allocator");
-        return -1;
-    }
-
-    return 0;
+void pic_irq_enable() {
+    outb(0x21, inb(0x21) & 0xfb); // Enable IRQ 2
+    outb(0xa1, inb(0xa1) & 0xff); // Enable IRQs 8-15
 }
 
 /**
- * Returns the number of ticks that have occurred since startup
- *
- * @return timer_ticks
+ * Disables interrupts via the Programmable Interrupt Controller (PIC)
  */
-int timer_get_ticks() {
-    return timer_ticks;
+void pic_irq_disable() {
+    outb(0x21, inb(0x21) | 0x04); // Disable IRQ 2
+    outb(0xa1, inb(0xa1) | 0x02); // Disable IRQs 8-15
 }
 
 /**
- * Timer IRQ Handler
- *
- * Should perform the following:
- *   - Increment the timer ticks every time the timer occurs
- *   - Handle each registered timer
- *     - If the interval is hit, run the callback function
- *     - Handle timer repeats
+ * Checks if a specific IRQ is enabled via the PIC
+ * @param irq_num - the IRQ number to check
+ * @return 1 if enabled, 0 if disabled
  */
-void timer_irq_handler(void) {
-    // Increment the timer_ticks value
-    timer_ticks++;
+int pic_irq_enabled(int irq_num) {
+    if (irq_num < 0 || irq_num > 15) {
+        kernel_log_error("interrupts: invalid IRQ number: %d", irq_num);
+        return 0;
+    }
 
-    // Iterate through the timers table
-    for (int i = 0; i < TIMERS_MAX; i++) {
-        if (timers[i].callback) {
-            if (timer_ticks % timers[i].interval == 0) {
-                timers[i].callback();
-                if (timers[i].repeat > 0) {
-                    timers[i].repeat--;
-                    if (timers[i].repeat == 0) {
-                        timer_callback_unregister(i);
-                    }
-                }
-            }
-        }
+    if (irq_num < 8) {
+        return (inb(0x21) & (1 << irq_num)) == 0;
+    } else {
+        return (inb(0xa1) & (1 << (irq_num - 8))) == 0;
     }
 }
 
 /**
- * Initializes timer related data structures and variables
+ * Dismisses an IRQ via the Programmable Interrupt Controller (PIC)
+ * @param irq_num - the IRQ number to dismiss
  */
-void timer_init(void) {
-    kernel_log_info("Initializing timer");
-
-    // Set the starting tick value
-    timer_ticks = 0;
-
-    // Initialize the timers data structures
-    for (int i = 0; i < TIMERS_MAX; i++) {
-        memset(&timers[i], 0, sizeof(timer_t));
+void pic_irq_dismiss(int irq_num) {
+    if (irq_num < 0 || irq_num > 15) {
+        kernel_log_error("interrupts: invalid IRQ number: %d", irq_num);
+        return;
     }
 
-    // Initialize the timer callback allocator queue
-    queue_init(&timer_allocator);
-
-    // Populate items into the allocator queue
-    for (int i = 0; i < TIMERS_MAX; i++) {
-        queue_in(&timer_allocator, i);
+    if (irq_num < 8) {
+        outb(0x20, 0x20); // Send EOI to primary PIC
+    } else {
+        outb(0xa0, 0x20); // Send EOI to secondary PIC
+        outb(0x20, 0x20); // Send EOI to primary PIC
     }
-
-    // Register the Timer IRQ with the isr_entry_timer and timer_irq_handler
-    interrupts_irq_register(IRQ_TIMER, timer_irq_handler);
 }
