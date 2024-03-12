@@ -18,10 +18,10 @@
 // PIC Definitions
 #define PIC1_BASE   0x20            // base address for PIC primary controller
 #define PIC2_BASE   0xa0            // base address for PIC secondary controller
-#define PIC1_CMD    PIC1_BASE       // address for issuing commands to PIC1
-#define PIC1_DATA   (PIC1_BASE+1)   // address for setting data for PIC1
-#define PIC2_CMD    PIC2_BASE       // address for issuing commands to PIC2
-#define PIC2_DATA   (PIC2_BASE+1)   // address for setting data for PIC2
+#define PIC1_COMMAND_PORT 0x20
+#define PIC1_DATA_PORT 0x21
+#define PIC2_COMMAND_PORT 0xA0
+#define PIC2_DATA_PORT 0xA1
 
 #define PIC_EOI     0x20            // PIC End-of-Interrupt command
 
