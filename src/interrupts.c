@@ -8,6 +8,7 @@
 #include <spede/machine/proc_reg.h>
 #include <spede/machine/seg.h>
 #include <spede/string.h>
+#include <spede/flames.h> // For inb and outb functions
 
 #include "kernel.h"
 #include "interrupts.h"
