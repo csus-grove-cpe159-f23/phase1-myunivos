@@ -150,5 +150,5 @@ void timer_init(void) {
     }
 
     // Register the Timer IRQ with the isr_entry_timer and timer_irq_handler
-    interrupts_irq_register(IRQ_TIMER, timer_irq_handler);
+    interrupts_irq_register(IRQ_TIMER, isr_entry_timer, timer_irq_handler);
 }
