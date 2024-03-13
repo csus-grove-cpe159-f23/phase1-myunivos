@@ -278,5 +278,3 @@ void interrupts_init() {
     memset(irq_handlers, 0, sizeof(irq_handlers));
 }
 
-interrupts_text_2.txt
-8 KB
