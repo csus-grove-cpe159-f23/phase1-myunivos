@@ -16,7 +16,7 @@
 #include "timer.h"
 
 #include "queue.h"
-
+#define TIME_SLICE 200
 // Process Queues
 queue_t run_queue;
 

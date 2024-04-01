@@ -240,6 +240,7 @@ static const char keyboard_map_secondary[] = {
  * Kernel context entry point
  * @param trapframe - pointer to the current process' trapframe
  */
+/**
 void kernel_context_enter(trapframe_t *trapframe) {
     if (active_proc) {
         // Save the currently running trapframe
@@ -259,7 +260,7 @@ void kernel_context_enter(trapframe_t *trapframe) {
     // Exit the kernel context
     kernel_context_exit(active_proc->trapframe);
 }
-
+*/
 
 /*
  *

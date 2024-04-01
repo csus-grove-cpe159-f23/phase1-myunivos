@@ -76,7 +76,7 @@ int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
 
     // Initialize the process control block
     proc->pid = next_pid;
-    proc->state = PROC_STATE_READY; // or any initial state
+    proc->state = ACTIVE; // or any initial state
     proc->type = proc_type;
     proc->run_time = 0; // Initialize other necessary data structures for the process
     proc->cpu_time = 0;
@@ -168,5 +168,5 @@ void kproc_init(void) {
     // Initialize other process related data structures
 
     // Create the idle process (kproc_idle) as a kernel process
-    kproc_create(kproc_idle, "kernel_idle", PROC_KERNEL);
+    kproc_create(kproc_idle, "kernel_idle", PROC_TYPE_KERNEL);
 }
