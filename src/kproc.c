@@ -22,6 +22,12 @@ proc_t proc_table[PROC_MAX];
 // Process stacks
 unsigned char proc_stack[PROC_MAX][PROC_STACK_SIZE];
 
+
+typedef enum {
+    PROC_TYPE_KERNEL,
+    PROC_TYPE_USER
+} proc_type_t;
+
 /**
  * Looks up a process in the process table via the process id
  * @param pid - process id
@@ -68,7 +74,7 @@ proc_t * entry_to_proc(int entry) {
  * @param proc_type - process type (kernel or user)
  * @return process id of the created process, -1 on error
  */
-int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
+int kproc_create(void (*entry_point)(void), char *proc_name, proc_type_t proc_type) {
     if (next_pid >= PROC_MAX)
         return -1; // No more processes can be created
 
@@ -168,5 +174,5 @@ void kproc_init(void) {
     // Initialize other process related data structures
 
     // Create the idle process (kproc_idle) as a kernel process
-    kproc_create(kproc_idle, "kernel_idle", PROC_TYPE_KERNEL);
+   kproc_create(kproc_idle, "kernel_idle", PROC_TYPE_KERNEL);
 }
