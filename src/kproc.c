@@ -74,7 +74,7 @@ proc_t * entry_to_proc(int entry) {
  * @param proc_type - process type (kernel or user)
  * @return process id of the created process, -1 on error
  */
-int kproc_create(void (*entry_point)(void), char *proc_name, proc_type_t proc_type) {
+int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
     if (next_pid >= PROC_MAX)
         return -1; // No more processes can be created
 
