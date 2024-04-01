@@ -23,10 +23,10 @@ proc_t proc_table[PROC_MAX];
 unsigned char proc_stack[PROC_MAX][PROC_STACK_SIZE];
 
 
-typedef enum {
-    PROC_TYPE_KERNEL,
-    PROC_TYPE_USER
-} proc_type_t;
+//typedef enum {
+   // PROC_TYPE_KERNEL,
+   // PROC_TYPE_USER
+//} proc_type_t;
 
 /**
  * Looks up a process in the process table via the process id
