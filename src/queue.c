@@ -7,6 +7,17 @@
 
 #include "queue.h"
 
+#include "queue.h"
+
+// Add this function to your queue.c file
+bool queue_is_empty(queue_t *queue) {
+    if (!queue) {
+        return true; // Consider an uninitialized queue as empty for safety
+    }
+
+    return (queue->size == 0);
+}
+
 /**
  * Initializes an empty queue
  * Sets the empty queue items to -1
