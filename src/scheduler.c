@@ -25,6 +25,20 @@ queue_t run_queue;
  */
 void scheduler_timer(void) {
     // Update the active process' run time and CPU time
+    if (active_proc != NULL) {
+        active_proc->cpu_time++;
+
+        if (active_proc->cpu_time >= TIME_SLICE) {
+            // Time slice expired, add to the run queue if not the idle process
+            if (active_proc->pid != 0) {
+                queue_in(&run_queue, active_proc->pid);
+            }
+            active_proc->cpu_time = 0;
+            active_proc->state = IDLE;
+            active_proc = NULL; // No active process now
+        }
+    }
+
 }
 
 /**
@@ -52,6 +66,22 @@ void scheduler_run(void) {
     // Make sure we have a valid process at this point
 
     // Ensure that the process state is set
+    if (active_proc == NULL || active_proc->state != ACTIVE) {
+        int pid;
+        if (!queue_is_empty(&run_queue)) {
+            // If the run queue is not empty, get the next process
+            queue_out(&run_queue, &pid);
+            active_proc = pid_to_proc(pid); // Convert PID to process control block
+        } else {
+            // No process is ready to run, assign idle process
+            active_proc = pid_to_proc(0); // The idle task has a PID of 0
+        }
+
+        if (active_proc != NULL) {
+            active_proc->state = ACTIVE;
+            // Additional context switch code would go here
+        }
+    }
 }
 
 /**
@@ -61,6 +91,10 @@ void scheduler_run(void) {
 void scheduler_add(proc_t *proc) {
     // Add the process to the run queue
     // Set the process state
+    if (proc->pid != 0 && proc->state != ACTIVE) {
+        queue_in(&run_queue, proc->pid);
+        proc->state = IDLE; // Mark as idle until it is scheduled again
+    }
 }
 
 /**
@@ -73,6 +107,10 @@ void scheduler_remove(proc_t *proc) {
 
     // If the process is the active process, ensure that the active process is cleared so when the
     // scheduler runs again, it will select a new process to run
+    if (active_proc == proc) {
+        active_proc = NULL; // Unschedule the active process
+    }
+    proc->state = NONE; // Set state to NONE indicating it's not in the scheduler
 }
 
 /**
@@ -83,5 +121,7 @@ void scheduler_init(void) {
 
     // Initialize any data structures or variables
     // Register the timer callback (scheduler_timer) to run every tick
+    queue_init(&run_queue); // Initialize the run queue
+    timer_callback_register(scheduler_timer, 1, -1); // Register scheduler timer to tick every time
 }
 

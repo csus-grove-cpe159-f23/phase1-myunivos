@@ -236,6 +236,30 @@ static const char keyboard_map_secondary[] = {
     KEY_NULL            /* 0x7f */
 };
 
+/**
+ * Kernel context entry point
+ * @param trapframe - pointer to the current process' trapframe
+ */
+void kernel_context_enter(trapframe_t *trapframe) {
+    if (active_proc) {
+        // Save the currently running trapframe
+        active_proc->trapframe = trapframe;
+    }
+
+    // Process the interrupt that occurred
+    interrupts_irq_handler(trapframe->interrupt);
+
+    // Run the scheduler
+    scheduler_run();
+
+    if (!active_proc) {
+        kernel_panic("No active process!");
+    }
+
+    // Exit the kernel context
+    kernel_context_exit(active_proc->trapframe);
+}
+
 
 /*
  *
