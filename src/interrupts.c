@@ -33,17 +33,6 @@ struct i386_gate *idt = NULL;
 // the various interrupts to be handled
 void (*irq_handlers[IRQ_MAX])();
 
-// Define inline assembly functions for input and output operations
-static inline uint8_t inb(uint16_t port) {
-    uint8_t data;
-    asm volatile("inb %1, %0" : "=a"(data) : "Nd"(port));
-    return data;
-}
-
-static inline void outb(uint16_t port, uint8_t data) {
-    asm volatile("outb %0, %1" :: "a"(data), "Nd"(port));
-}
-
 /**
  * Enable interrupts with the CPU
  */
@@ -112,7 +101,7 @@ void interrupts_irq_register(int irq, void (*entry)(), void (*handler)()) {
     kernel_log_debug("interrupts: IRQ %d (0x%02x) IDT entry added", irq, irq);
 
     /* Add the ISR handler to the table */
-    irq_handlers[irq] = handler;
+    irq_handlers[irq]=handler;
     kernel_log_debug("interrupts: IRQ %d (0x%02x) handler added", irq, irq);
 
     /* If the interrupt originates from the PIC, enable IRQs */
@@ -130,35 +119,40 @@ void interrupts_irq_register(int irq, void (*entry)(), void (*handler)()) {
  * @note IRQs > 0xf will be remapped
  */
 void pic_irq_enable(int irq) {
-    // Determine the PIC to be used for the given IRQ number
-    // Read the current mask
-    // Clear the associated bit in the mask to enable the IRQ
-    // Write the mask out to the PIC
-    uint16_t port;
-    uint8_t mask;
+    // Determine the PIC to be used and adjust the irq number
+    // Read the current mask from the data port
+    // check the associated bit and return if the IRQ is enabled
 
-    if (irq < 0 || irq > 15) {
-        kernel_log_error("pic_irq_enable: Invalid IRQ %d", irq);
-        return;
-    }
+    int port = PIC1_DATA;
+    int mask;
 
-    // Determine the PIC to be used for the given IRQ number
-    if (irq < 8) {
-        port = PIC1_DATA;
-    } else {
+    // Isolate only the first nibble; handles remapping
+    // Remember irq is 0 to 15 (0 to F) so we want to make sure
+    // irq only contains 0 to 15 and nothing larger. 
+    irq &= 0xf;
+
+    // Select the secondary PIC if the IRQ is associated with it
+    if (irq >= 0x8) {
         port = PIC2_DATA;
-        irq -= 8; // For the secondary PIC, IRQs start from 8
+        irq -= 0x8; // Remeber each PIC has address 0 to 7, so if
+                    // it's the second pic, we need to subtract
+                    // 8 to get the real value for pic2
     }
 
     // Read the current mask
-    mask = inb(port);
+    mask = inportb(port);
 
-    // Clear the associated bit in the mask to enable the IRQ
+    // Set the IRQ. Breaking down the following line of code:
+    //  Shift 1 left by irq positions because we are enabling a single bit from 0 to 7, not the number 
+    //      represented by irq (ex: irq of 2 is 11 in binary)
+    //  Invert the value (0 enables, 1 disables)
+    //  Set mask = mask & InvertedValue 
     mask &= ~(1 << irq);
 
     // Write the mask out to the PIC
-    outb(mask, port);
+    outportb(port, mask);
 
+    kernel_log_trace("interrupts: Enabled IRQ %d (0x%02x) via PIC port=0x%02x, mask=0x%02x", irq, irq, port, mask);
 }
 
 /**
@@ -167,34 +161,32 @@ void pic_irq_enable(int irq) {
  * @param irq - IRQ that should be disabled
  */
 void pic_irq_disable(int irq) {
-    // Determine the PIC to be used for the given IRQ number
-    // Read the current mask
-    // Set the associated bit in the mask to disable the IRQ
-    // Write the mask back to the PIC
-    uint16_t port;
-    uint8_t mask;
+    int port = PIC1_DATA;
+    int mask;
 
-    if (irq < 0 || irq > 15) {
-        kernel_log_error("pic_irq_disable: Invalid IRQ %d", irq);
-        return;
-    }
+    // We only care about bits 0-7, this allows
+    // us to handle remapped IRQs
+    irq &= 0xf;
 
-    // Determine the PIC to be used for the given IRQ number
-    if (irq < 8) {
-        port = PIC1_DATA;
-    } else {
+    // Determine the PIC to be used and adjust the irq number
+    if (irq >= 0x8) {
         port = PIC2_DATA;
-        irq -= 8; // For the secondary PIC, IRQs start from 8
+        irq -= 0x8;
     }
 
     // Read the current mask
-    mask = inb(port);
+    mask = inportb(port);
 
-    // Set the associated bit in the mask to disable the IRQ
-    mask |= (1 << irq);
+    // Set the bit in the mask to disable the IRQ. Breaking down the following line of code:
+    //  Shift 1 left by irq positions because we are enabling a single bit from 0 to 7, not the number 
+    //      represented by irq (ex: irq of 2 is 11 in binary)
+    //  Perform OR operation with mask because we want to set 1 to disable the irq at irq value based in
+    mask = 0xff & (mask ^ (1 << irq));
 
     // Write the mask back to the PIC
-    outb(mask, port);
+    outportb(port, mask);
+
+    kernel_log_trace("interrupts: Disabled IRQ %d (0x%02x) via PIC port=0x%02x, mask=0x%02x", irq, irq, port, mask);
 }
 
 /**
@@ -204,31 +196,28 @@ void pic_irq_disable(int irq) {
  * @return - 1 if enabled, 0 if disabled
  */
 int pic_irq_enabled(int irq) {
+    int port = PIC1_DATA;
+    int mask;
+
+    // We only care about bits 0-7, this allows
+    // us to handle remapped IRQs
+    irq &= 0xf;
+
     // Determine the PIC to be used and adjust the irq number
-    // Read the current mask from the data port
-    // check the associated bit and return if the IRQ is enabled
-    uint16_t port;
-    uint8_t mask;
-
-    if (irq < 0 || irq > 15) {
-        kernel_log_error("pic_irq_enabled: Invalid IRQ %d", irq);
-        return 0;
-    }
-
-    // Determine the PIC to be used for the given IRQ number
-    if (irq < 8) {
-        port = PIC1_DATA;
-    } else {
+    if (irq >= 0x8) {
         port = PIC2_DATA;
-        irq -= 8; // For the secondary PIC, IRQs start from 8
+        irq -= 0x8;  // pic2 would need to be offset 
     }
 
-    // Read the current mask from the data port
-    mask = inb(port);
+    // Read the current mask
+    mask = inportb(port);
 
-    // Check the associated bit and return if the IRQ is enabled
-    return !(mask & (1 << irq));
-
+    // Breaking down this line of code
+    //  ? is a ternary operator... Returns a 0 or 1 based on the result of the expression
+    //  Perform bitwise AND between mask and (1 << irq)
+    //      If result is non-zero (bit at position irq in mask is set), return 0. Remember 1 for pic means disabled.
+    //      If result is 0 (bit at position irq in max is not set), return 1
+    return (mask & (1 << irq)) ? 0 : 1;
 }
 
 /**
@@ -239,20 +228,18 @@ int pic_irq_enabled(int irq) {
  * @param irq - IRQ to be dismissed
  */
 void pic_irq_dismiss(int irq) {
-    // Send EOI to the secondary PIC, if needed
-    // Send EOI to the primary PIC, if needed
-    if (irq < 0 || irq > 15) {
-        kernel_log_error("pic_irq_dismiss: Invalid IRQ %d", irq);
-        return;
+    // We only care about bits 0-7, this allows
+    // us to handle remapped IRQs
+    irq &= 0xf;
+
+    if (irq >= 0x8) {
+        // Send EOI to the secondary PIC
+        outportb(PIC2_CMD, PIC_EOI);
     }
 
-    // Send EOI to the secondary PIC, if needed
-    if (irq >= 8) {
-        outb(PIC_EOI, PIC2_CMD);
-    }
-
-    // Send EOI to the primary PIC
-    outb(PIC_EOI, PIC1_CMD);
+    // Send EOI to the primary PIC (remember that even if irq is from pic2, EOI also needs 
+    // to be sent to pic1)
+    outportb(PIC1_CMD, PIC_EOI);
 }
 
 /**
@@ -264,6 +251,6 @@ void interrupts_init() {
     // Obtain the IDT base address
     idt = get_idt_base();
 
+    // Set irq_handlers table (array of function pointers) to 0
     memset(irq_handlers, 0, sizeof(irq_handlers));
 }
-
