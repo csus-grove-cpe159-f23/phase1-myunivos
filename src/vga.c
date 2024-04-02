@@ -3,6 +3,7 @@
  * California State University, Sacramento
  *
  */
+
 #include <spede/machine/io.h>
 #include <spede/stdarg.h>
 #include <spede/stdio.h>
@@ -43,8 +44,13 @@ int vga_scroll = 0;
 void vga_init(void) {
     kernel_log_info("Initializing VGA driver");
 
-    //Disable the cursor
-    vga_cursor_disable();
+    if (vga_cursor) {
+        // Enable the cursor
+        vga_cursor_enable();
+    } else {
+        // Disable the cursor
+        vga_cursor_disable();
+    }
 
     // Clear the screen
     vga_clear();
@@ -404,4 +410,5 @@ void vga_cursor_disable(void) {
     // The cursor can be disabled by setting bit 5 in the "Cursor Start Register" (0xA)
     outportb(VGA_PORT_ADDR, 0x0A);
     outportb(VGA_PORT_DATA, 0x20);
-}
+}  
+ 
