@@ -351,13 +351,13 @@ unsigned int keyboard_decode(unsigned int c) {
         case KEY_CTRL_R:
             if (key_pressed) {
                 if ((kbd_status & KEY_STATUS_CTRL) == 0) {
-//                    kernel_log_trace("keyboard: CTRL pressed");
+                    kernel_log_trace("keyboard: CTRL pressed");
                 }
 
                 kbd_status |= KEY_STATUS_CTRL;
             } else {
                 if ((kbd_status & KEY_STATUS_CTRL) != 0) {
-//                    kernel_log_trace("keyboard: CTRL released");
+                    kernel_log_trace("keyboard: CTRL released");
                 }
 
                 kbd_status &= ~KEY_STATUS_CTRL;
@@ -368,13 +368,13 @@ unsigned int keyboard_decode(unsigned int c) {
         case KEY_ALT_R:
             if (key_pressed) {
                 if ((kbd_status & KEY_STATUS_ALT) == 0) {
-//                    kernel_log_trace("keyboard: ALT pressed");
+                    kernel_log_trace("keyboard: ALT pressed");
                 }
 
                 kbd_status |= KEY_STATUS_ALT;
             } else {
                 if ((kbd_status & KEY_STATUS_ALT) != 0) {
-//                    kernel_log_trace("keyboard: ALT released");
+                    kernel_log_trace("keyboard: ALT released");
                 }
 
                 kbd_status &= ~KEY_STATUS_ALT;
@@ -385,13 +385,13 @@ unsigned int keyboard_decode(unsigned int c) {
         case KEY_SHIFT_R:
             if (key_pressed) {
                 if ((kbd_status & KEY_STATUS_SHIFT) == 0) {
-//                    kernel_log_trace("keyboard: SHIFT pressed");
+                    kernel_log_trace("keyboard: SHIFT pressed");
                 }
 
                 kbd_status |= KEY_STATUS_SHIFT;
             } else {
                 if ((kbd_status & KEY_STATUS_SHIFT) != 0) {
-//                    kernel_log_trace("keyboard: SHIFT released");
+                    kernel_log_trace("keyboard: SHIFT released");
                 }
 
                 kbd_status &= ~KEY_STATUS_SHIFT;
@@ -400,10 +400,10 @@ unsigned int keyboard_decode(unsigned int c) {
 
         case KEY_CAPS:
             if (key_pressed) {
-//                kernel_log_trace("keyboard: CAPS pressed");
+                kernel_log_trace("keyboard: CAPS pressed");
                 kbd_status ^= KEY_STATUS_CAPS;
             } else {
-//                kernel_log_trace("keyboard: CAPS released");
+                kernel_log_trace("keyboard: CAPS released");
             }
             break;
 
