@@ -26,8 +26,8 @@ queue_t run_queue;
 void scheduler_timer(void) {
     // Update the active process' run time and CPU time
     if (active_proc != NULL) {
+        active_proc->run_time++;
         active_proc->cpu_time++;
-
         if (active_proc->cpu_time >= TIME_SLICE) {
             // Time slice expired, add to the run queue if not the idle process
             if (active_proc->pid != 0) {
@@ -66,12 +66,12 @@ void scheduler_run(void) {
     // Make sure we have a valid process at this point
 
     // Ensure that the process state is set
-    if (active_proc == NULL || active_proc->state != ACTIVE) {
-        int pid;
-        if (!queue_is_empty(&run_queue)) {
+    if (active_proc == NULL || active_proc->state >= TIME_SLICE) {
+        int next_pid;
+        if (queue_out(&run_queue, &next_pid) == 0) {
             // If the run queue is not empty, get the next process
-            queue_out(&run_queue, &pid);
-            active_proc = pid_to_proc(pid); // Convert PID to process control block
+            active_proc = pid_to_proc(next_pid);
+            active_proc->state = ACTIVE; // Convert PID to process control block
         } else {
             // No process is ready to run, assign idle process
             active_proc = pid_to_proc(0); // The idle task has a PID of 0
