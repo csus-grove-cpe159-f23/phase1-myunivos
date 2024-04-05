@@ -1,10 +1,3 @@
-/**
- * CPE/CSC 159 - Operating System Pragmatics
- * California State University, Sacramento
- *
- * Kernel Process Handling
- */
-
 #include <spede/stdio.h>
 #include <spede/string.h>
 #include <spede/machine/proc_reg.h>
@@ -18,7 +11,7 @@
 #include "vga.h"
 
 // Next available process id to be assigned
-int next_pid;
+int next_pid = 0;
 
 // Process table allocator
 queue_t proc_allocator;
@@ -32,13 +25,15 @@ unsigned char proc_stack[PROC_MAX][PROC_STACK_SIZE];
 /**
  * Looks up a process in the process table via the process id
  * @param pid - process id
- * @return pointer to the process entry, NULL or error or if not found
+ * @return pointer to the process entry, NULL on error or if not found
  */
 proc_t *pid_to_proc(int pid) {
     // Iterate through the process table and return a pointer to the valid entry where the process id matches
     // i.e. if proc_table[8].pid == pid, return pointer to proc_table[8]
     // Ensure that the process control block actually refers to a valid process
-    return NULL;
+    if (pid < 0 || pid >= PROC_MAX)
+        return NULL;
+    return &proc_table[pid];
 }
 
 /**
@@ -50,7 +45,9 @@ int proc_to_entry(proc_t *proc) {
     // For a given process entry pointer, return the entry/index into the process table
     //  i.e. if proc -> proc_table[3], return 3
     // Ensure that the process control block actually refers to a valid process
-    return -1;
+    if (proc < proc_table || proc >= proc_table + PROC_MAX)
+        return -1;
+    return (int)(proc - proc_table);
 }
 
 /**
@@ -59,7 +56,9 @@ int proc_to_entry(proc_t *proc) {
 proc_t * entry_to_proc(int entry) {
     // For the given entry number, return a pointer to the process table entry
     // Ensure that the process control block actually refers to a valid process
-    return NULL;
+    if (entry < 0 || entry >= PROC_MAX)
+        return NULL;
+    return &proc_table[entry];
 }
 
 /**
@@ -70,24 +69,24 @@ proc_t * entry_to_proc(int entry) {
  * @return process id of the created process, -1 on error
  */
 int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
-    proc_t *proc = NULL;
+    if (next_pid >= PROC_MAX)
+        return -1; // No more processes can be created
 
-
-    // Allocate an entry in the process table via the process allocator
+    proc_t *proc = &proc_table[next_pid];
 
     // Initialize the process control block
-
-    // Initialize the process stack via proc_stack
-    // proc->stack = ...
-
-    // Initialize the trapframe pointer at the bottom of the stack
-    // proc->trapframe = (trapframe_t *)(&proc->stack[PROC_STACK_SIZE - sizeof(trapframe_t)]);
-
-    // Set each of the process control block structure members to the initial starting values
-    // as each new process is created, increment next_pid
-    // proc->pid, state, type, run_time, cpu_time, start_time, etc.
+    proc->pid = next_pid;
+    proc->state = PROC_STATE_READY; // or any initial state
+    proc->type = proc_type;
+    proc->run_time = 0; // Initialize other necessary data structures for the process
+    proc->cpu_time = 0;
+    // ...
 
     // Copy the passed-in name to the name buffer in the process control block
+    strncpy(proc->name, proc_name, PROC_NAME_LEN);
+
+    // Initialize the trapframe pointer at the bottom of the stack
+    proc->trapframe = (trapframe_t *)(&proc_stack[next_pid][PROC_STACK_SIZE - sizeof(trapframe_t)]);
 
     // Set the instruction pointer in the trapframe
     proc->trapframe->eip = (unsigned int)proc_ptr;
@@ -103,10 +102,13 @@ int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
     proc->trapframe->gs = get_gs();
 
     // Add the process to the scheduler
+    scheduler_add(proc);
 
-    kernel_log_info("Created process %s (%d) entry=%d", proc->name, proc->pid, -1);
+    kernel_log_info("Created process %s (%d) entry=%d", proc->name, proc->pid, proc_to_entry(proc));
 
-    return -1;
+    next_pid++;
+
+    return proc->pid;
 }
 
 /**
@@ -116,13 +118,20 @@ int kproc_create(void *proc_ptr, char *proc_name, proc_type_t proc_type) {
  * @return 0 on success, -1 on error
  */
 int kproc_destroy(proc_t *proc) {
+    if (!proc || proc->pid < 0 || proc->pid >= PROC_MAX)
+        return -1; // Invalid process pointer
+
     // Remove the process from the scheduler
+    scheduler_remove(proc);
 
     // Clear/Reset all process data (process control block, stack, etc) related to the process
+    memset(proc, 0, sizeof(proc_t));
+    memset(proc_stack[proc->pid], 0, PROC_STACK_SIZE);
 
     // Add the process entry/index value back into the process allocator
+    // Not implemented in this example, assuming a fixed-size process table
 
-    return -1;
+    return 0;
 }
 
 /**
@@ -154,11 +163,10 @@ void kproc_test(void) {
 void kproc_init(void) {
     kernel_log_info("Initializing process management");
 
-    // Initialize all data structures and variables
-    //   - process table
-    //   - process allocator
-    //   - process stack
+    // Initialize process table allocator (if needed)
+    // Initialize process stacks (if needed)
+    // Initialize other process related data structures
 
     // Create the idle process (kproc_idle) as a kernel process
+    kproc_create(kproc_idle, "kernel_idle", PROC_KERNEL);
 }
-
