@@ -269,7 +269,7 @@ void keyboard_irq_handler(void) {
     unsigned int c = keyboard_poll();
 
     if (c) {
-        tty_update(c);
+        tty_input(c);//was tty_update (c) for phase 3
     }
 }
 
