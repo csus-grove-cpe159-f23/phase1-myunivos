@@ -10,6 +10,12 @@
 #include "syscall_common.h"
 
 /**
+ * System call IRQ handler
+ * Dispatches system calls to the function associate with the specified system call
+ */
+void ksyscall_irq_handler(void);
+
+/**
  * System Call Initialization
  */
 void ksyscall_init(void);
