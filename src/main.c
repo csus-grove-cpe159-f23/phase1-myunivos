@@ -14,6 +14,7 @@
 #include "vga.h"
 #include "scheduler.h"
 #include "kproc.h"
+#include "ksyscall.h"
 #include "test.h"
 
 int main(void) {
@@ -40,6 +41,9 @@ int main(void) {
 
     // Initialize the scheduler
     scheduler_init();
+
+    // Initialize system calls
+    ksyscall_init();
 
     // Test initialization
     test_init();
