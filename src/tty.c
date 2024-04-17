@@ -52,7 +52,10 @@ int tty_get_active(void) {
  * @return pointer to TTY table entry
  */
 struct tty_t *tty_get(int tty) {
+    if (tty < 0 || tty >= TTY_MAX) {
     return NULL;
+    }
+    return &tty_table[tty];
 }
 
 /**
@@ -70,6 +73,11 @@ void tty_refresh(void) {
     // while not ringbuf_is_empty
         // Read next character from ring buffer
         // Send next characture to the tty screen buffer
+    while (!ringbuf_is_empty(&tty->io_output)) {
+        char c;
+        ringbuf_read(&tty->io_output, &c); // Read next character from output buffer
+        tty_update(c); // Update TTY with the character
+    }
 
 
     if (tty->refresh) {
@@ -100,6 +108,14 @@ void tty_refresh(void) {
  * @param c - character to write into the input buffer
  */
 void tty_input(char c) {
+    if (!active_tty) {
+        return;
+    }
+    struct tty_t *tty = active_tty;
+    tty->buf[tty->pos_input++] = c;
+    if (tty->echo) {
+        tty_update(c);
+    }
 }
 
 /**
