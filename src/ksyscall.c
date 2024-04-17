@@ -59,6 +59,7 @@ void ksyscall_irq_handler(void) {
  */
 void ksyscall_init(void) {
     // Register the IDT entry and IRQ handler for the syscall IRQ (IRQ_SYSCALL)
+    fill_gate(IRQ_SYSCALL, (unsigned int)ksyscall_irq_handler, get_cs(), ACC_INTR_GATE, 0);
 }
 
 /**
