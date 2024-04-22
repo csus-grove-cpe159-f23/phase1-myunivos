@@ -112,11 +112,15 @@ void tty_input(char c) {
         return;
     }
     struct tty_t *tty = active_tty;
-    tty->buf[tty->pos_input++] = c;
+    
+    // Handle echoing to the output buffer if the flag is set
     if (tty->echo) {
-        tty_update(c);
+          ringbuf_write(&tty->io_output, c);
     }
+    
+    tty_update(c); // Update TTY with the character regardless of echo
 }
+
 
 /**
  * Updates the TTY with the given character

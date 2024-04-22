@@ -1,7 +1,7 @@
 /**
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
- * 
+ *
  *
  * System call APIs
  */
@@ -125,6 +125,8 @@ int sys_get_name(char *name) {
  * @param seconds - number of seconds the process should sleep
  */
 void proc_sleep(int secs) {
+// Call the assembly routine that performs a syscall with one parameter (the seconds to sleep)
+    _syscall1(SYSCALL_PROC_SLEEP, secs);
 }
 
 /**
@@ -181,3 +183,5 @@ int io_read(int io, char *buf, int n) {
 int io_flush(int io) {
     return 0;
 }
+
+

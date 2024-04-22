@@ -15,6 +15,9 @@
 #include "scheduler.h"
 #include "timer.h"
 
+#define ACC_INTR_GATE 0x8E00
+extern void fill_gate(int vector, int addr, int cs, int attr, int dpl);
+extern unsigned short get_cs(void);
 /**
  * System call IRQ handler
  * Dispatches system calls to the function associate with the specified system call

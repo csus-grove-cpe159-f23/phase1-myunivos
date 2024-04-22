@@ -14,20 +14,34 @@
 #include "kproc.h"
 #include "scheduler.h"
 #include "timer.h"
-
 #include "queue.h"
 
 // Process Queues
 queue_t run_queue;      // Run queue -> processes that will be scheduled to run
+queue_t sleep_queue;
 
 /**
  * Scheduler timer callback
  */
 void scheduler_timer(void) {
-    // Update the active process' run time and CPU time
     if (active_proc) {
         active_proc->run_time++;
         active_proc->cpu_time++;
+    }
+
+    int current_ticks = timer_get_ticks();
+    int pid;
+
+    for(int i = 0; i < sleep_queue.size; i++) {
+        if (queue_out(&sleep_queue, &pid) == 0) {
+            proc_t *proc = pid_to_proc(pid);
+
+            if (proc && current_ticks >= proc->sleep_time) {
+                scheduler_add(proc);
+            } else {
+                queue_in(&sleep_queue, pid);
+            }
+        }
     }
 }
 
@@ -156,6 +170,17 @@ void scheduler_sleep(proc_t *proc, int time) {
     // Set the process state to SLEEPING
     // Remove the process from the scheduler
     // Add the proces to the sleep queue
+    if(!proc){
+        return;
+    }
+    //calculate wake-up time
+    int current_ticks = timer_get_ticks();
+    proc->sleep_time = current_ticks + (time * 100);
+    //sleep time
+    //proc->sleep_time = time;
+    proc->state = SLEEPING; //set process state
+    scheduler_remove(proc); //remove process from scheduler
+    queue_in(&sleep_queue, proc->pid);
 }
 
 /**
