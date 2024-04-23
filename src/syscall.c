@@ -108,7 +108,7 @@ int _syscall3(int syscall, int arg1, int arg2, int arg3) {
  * @return system time in seconds
  */
 int sys_get_time(void) {
-    return _syscall0(SYSCALL_SYS_GET_TIME);
+    return -1;
 }
 
 /**
@@ -134,6 +134,7 @@ void proc_sleep(int secs) {
  * @param exitcode An exit code to return to the parent process
  */
 void proc_exit(int exitcode) {
+    _syscall1(SYSCALL_PROC_EXIT, exitcode);
 }
 
 /**
@@ -141,7 +142,7 @@ void proc_exit(int exitcode) {
  * @return process id
  */
 int proc_get_pid(void) {
-    return -1;
+    return _syscall0(SYSCALL_PROC_GET_PID);
 }
 
 /**
