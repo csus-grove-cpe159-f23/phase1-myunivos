@@ -73,26 +73,34 @@ void ksyscall_init(void) {
  * @param n - number of bytes to write
  * @return -1 on error or value indicating number of bytes copied
  */
-int ksyscall_io_write(int io, char *buf, int size) {
+int ksyscall_io_write(int io, char *buf, int n) {
+    // Implementation of writing to the process' specified IO buffer
+    // Placeholder implementation
+    if (io < 0 || io > 1 || buf == NULL || n < 0)
+        return -1; // Error: Invalid arguments
 
-    // Ensure there is an active process
+    pcb *current_process = get_current_process(); // Get the PCB of the current process
+    if (current_process == NULL || current_process->io[io] == NULL)
+        return -1; // Error: Process or IO buffer not found
 
-    // Ensure the IO buffer is withing range (PROC_IO_MAX)
+    ring_buffer *io_buffer = current_process->io[io];
+    int bytes_copied = 0;
 
-    // Ensure that the active process has valid io
-    // If not active_proc->....
-
-    // Using ringbuf_write_mem - Write size bytes from buf to active_proc->io... 
-    if (!active_proc) {
-        return -1; // No active process
+    while (n > 0) {
+        // Copy bytes from buf to the IO buffer
+        if (io_buffer->count < BUFSIZE) {
+            io_buffer->buffer[io_buffer->head++] = *buf++;
+            io_buffer->head %= BUFSIZE;
+            io_buffer->count++;
+            bytes_copied++;
+            n--;
+        } else {
+            // Buffer full
+            break;
+        }
     }
 
-    // Validate IO index and that the active process has a valid io buffer.
-    if (io < 0 || io >= PROC_IO_MAX || !active_proc->io[io]) {
-        return -1; // Invalid IO index or buffer
-    }
-
-     return ringbuf_write_mem(active_proc->io[io], buf, size);
+    return bytes_copied;
 }
 
 /**
@@ -102,27 +110,34 @@ int ksyscall_io_write(int io, char *buf, int size) {
  * @param n - number of bytes to read
  * @return -1 on error or value indicating number of bytes copied
  */
-int ksyscall_io_read(int io, char *buf, int size) {
+int ksyscall_io_read(int io, char *buf, int n) {
+    // Implementation of reading from the process' specified IO buffer
+    // Placeholder implementation
+    if (io < 0 || io > 1 || buf == NULL || n < 0)
+        return -1; // Error: Invalid arguments
 
-    // Ensure there is active process, IO buffer is within range, active process has valid io
+    pcb *current_process = get_current_process(); // Get the PCB of the current process
+    if (current_process == NULL || current_process->io[io] == NULL)
+        return -1; // Error: Process or IO buffer not found
 
-    // Using ringbuf_read_mem - Read size bytes from active_proc->io to buf
-    if (!active_proc) {
-        return -1; // No active process
+    ring_buffer *io_buffer = current_process->io[io];
+    int bytes_copied = 0;
+
+    while (n > 0) {
+        // Copy bytes from the IO buffer to buf
+        if (io_buffer->count > 0) {
+            *buf++ = io_buffer->buffer[io_buffer->tail++];
+            io_buffer->tail %= BUFSIZE;
+            io_buffer->count--;
+            bytes_copied++;
+            n--;
+        } else {
+            // Buffer empty
+            break;
+        }
     }
 
-    // Check if IO index is within range and buffer is valid
-    if (io < 0 || io >= PROC_IO_MAX || !active_proc->io[io]) {
-        return -1; // Invalid IO index or buffer
-    }
-
-    // Read data from the ring buffer
-    int bytes_read = ringbuf_read_mem(active_proc->io[io], buf, size);
-    if (bytes_read < 0) {
-        return -1; // Error during read
-    }
-
-    return bytes_read; // Return number of bytes read
+    return bytes_copied;
 }
 
 
@@ -132,21 +147,17 @@ int ksyscall_io_read(int io, char *buf, int size) {
  * @return -1 on error or 0 on success
  */
 int ksyscall_io_flush(int io) {
+    // Implementation of flushing (clearing) the specified IO buffer
+    // Placeholder implementation
+    if (io < 0 || io > 1)
+        return -1; // Error: Invalid IO identifier
 
-    // Ensure active process, etc... 
+    pcb *current_process = get_current_process(); // Get the PCB of the current process
+    if (current_process == NULL || current_process->io[io] == NULL)
+        return -1; // Error: Process or IO buffer not found
 
-    // Use ringbuf_flush to flush io buffer
-    if (!active_proc) {
-        return -1; // No active process
-    }
-
-    // Check if IO index is within range and buffer is valid
-    if (io < 0 || io >= PROC_IO_MAX || !active_proc->io[io]) {
-        return -1; // Invalid IO index or buffer
-    }
-
-    // Flush the ring buffer
-    ringbuf_flush(active_proc->io[io]);
+    ring_buffer *io_buffer = current_process->io[io];
+    io_buffer->head = io_buffer->tail = io_buffer->count = 0; // Reset buffer indices and count
 
     return 0; // Success
 }
@@ -156,7 +167,8 @@ int ksyscall_io_flush(int io) {
  * @return system time in seconds
  */
 int ksyscall_sys_get_time(void) {
-    return timer_get_ticks() / 100;
+    // Implementation of getting the current system time in seconds
+    return timer_get_ticks(); // Placeholder for system time in ticks
 }
 
 /**
