@@ -108,7 +108,7 @@ int _syscall3(int syscall, int arg1, int arg2, int arg3) {
  * @return system time in seconds
  */
 int sys_get_time(void) {
-    return -1;
+    return _syscall0(SYSCALL_SYS_GET_TIME);
 }
 
 /**
@@ -151,7 +151,7 @@ int proc_get_pid(void) {
  * @return 0 on success, -1 or other non-zero value on error
  */
 int proc_get_name(char *name) {
-    return -1;
+    return _syscall1(SYSCALL_PROC_GET_NAME, (int)name);
 }
 
 /**
@@ -162,7 +162,7 @@ int proc_get_name(char *name) {
  * @return -1 on error or value indicating number of bytes copied
  */
 int io_write(int io, char *buf, int n) {
-    return 0;
+    return _syscall3(SYSCALL_IO_WRITE, io, (int)buf, n);
 }
 
 /**
@@ -173,7 +173,7 @@ int io_write(int io, char *buf, int n) {
  * @return -1 on error or value indicating number of bytes copied
  */
 int io_read(int io, char *buf, int n) {
-    return 0;
+    return _syscall3(SYSCALL_IO_READ, io, (int)buf, n);
 }
 
 /**
@@ -182,7 +182,7 @@ int io_read(int io, char *buf, int n) {
  * @return -1 on error or 0 on success
  */
 int io_flush(int io) {
-    return 0;
+    return _syscall1(SYSCALL_IO_FLUSH, io);
 }
 
 
