@@ -30,7 +30,15 @@ int ksemaphores_init() {
     // Initialize the semaphore queue
 
     // Fill the semaphore queue
+    int i;
 
+    queue_init(&sem_queue);
+    for (i = 0; i < SEM_MAX; i++) {
+        semaphores[i].allocated = 0;
+        semaphores[i].count = 0;
+        queue_init(&semaphores[i].wait_queue);
+        queue_in(&sem_queue, i);
+    }
     return 0;
 }
 
@@ -47,8 +55,15 @@ int ksem_init(int value) {
     // Initialize the semaphore data structure
     // sempohare table + all members (wait queue, allocated, count)
         // set count to initial value
+    int id;
+    if(queue_out(&sem_queue, &id) == -1 || id < 0 || id >= SEM_MAX) {
+    return -1; //No available semaphore  or Invalid Id
+    }
 
-    return -1;
+    semaphores[id].allocated = 1;
+    semaphores[id].count = value;
+    queue_init(&semaphores[id].wait_queue);
+    return id;
 }
 
 /**
@@ -64,8 +79,17 @@ int ksem_destroy(int id) {
     // Add the id back into the semaphore queue to be re-used later
 
     // Clear the memory for the data structure
+    if(id < 0 || id >= SEM_MAX || semaphores[id].allocated == 0) {
+        return -1;
+    }
+    if(!queue_is_empty(&semaphores[id].wait_queue)){
+        return -1; //cannot destroy semaphore, process is waiting
+    }
 
-    return -1;
+    semaphores[id].allocated = 0;
+    queue_in(&sem_queue, id);
+
+    return 0;
 }
 
 /**
@@ -86,7 +110,20 @@ int ksem_wait(int id) {
 
     // Return the current semaphore count
 
-    return -1;
+    if (id < 0 || id >= SEM_MAX || semaphores[id].allocated == 0) {
+        return -1;
+    }
+
+    if (semaphores[id].count > 0) {
+        semaphores[id].count--;
+        return semaphores[id].count;
+    }
+
+    // Block the process
+    scheduler_remove(active_proc);
+    active_proc->state = WAITING;
+    queue_in(&semaphores[id].wait_queue, active_proc->pid);
+    return 0;
 }
 
 /**
@@ -105,6 +142,18 @@ int ksem_post(int id) {
         // decrement the semaphore count
 
     // return current semaphore count
+    if (id < 0 || id >= SEM_MAX || semaphores[id].allocated == 0) {
+        return -1;
+    }
 
-    return -1;
+    semaphores[id].count++;
+    if (!queue_is_empty(&semaphores[id].wait_queue)) {
+        int pid;
+        queue_out(&semaphores[id].wait_queue, &pid);
+        proc_t *proc = &proc_table[pid];
+        scheduler_add(proc);
+        semaphores[id].count--;
+    }
+
+    return semaphores[id].count;
 }
