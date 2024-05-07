@@ -16,6 +16,8 @@
 #include "kproc.h"
 #include "ksyscall.h"
 #include "test.h"
+#include "kmutex.h"
+#include "ksem.h"
 
 int main(void) {
     // Always iniialize the kernel
@@ -36,24 +38,32 @@ int main(void) {
     // Initialize the keyboard driver
     keyboard_init();
 
-    // Initialize processes
-    kproc_init();
-
     // Initialize the scheduler
     scheduler_init();
 
+    // Initialize processes
+    kproc_init();
+
     // Initialize system calls
     ksyscall_init();
+
+    // Initialize kernel semaphores
+    ksemaphores_init();
+
+    // Initialize kernel mutexes
+    kmutexes_init();
 
     // Test initialization
     test_init();
 
     // Print a welcome message
+/*
     vga_printf("Welcome to %s!\n", OS_NAME);
     vga_puts("Press a key to continue...\n");
 
     // Wait for a key to be pressed
     keyboard_getc();
+*/
 
     // Clear the screen
     vga_clear();
