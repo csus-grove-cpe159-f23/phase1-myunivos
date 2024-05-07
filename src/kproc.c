@@ -262,26 +262,26 @@ void kproc_init(void) {
 
     kernel_log_info("Created idle process %d", pid);
 
-    // Create 4 instances of the program shell and attach to individual tty's 
-    
-    for (int i = 0; i < 4; i++) {
-        // Create a user process with a pointer to the program shell
+    for (int i = 1; i < 5; i++) {
         pid = kproc_create(prog_shell, "shell", PROC_TYPE_USER);
 
-        if (pid < 0) {
-            kernel_log_error("Failed to create shell process");
-        }
+        kernel_log_debug("Created shell process %d", pid);
 
-        // Attach the process to the TTY using kproc_attach_tty
-        int tty_number = i;
-        int val = kproc_attach_tty(pid, tty_number);
-
-        if (val != 0) {
-            kernel_log_error("Failed to attach shell process to TTY %d", tty_number);
-        }
+        // Attach the process to the TTY
+        kproc_attach_tty(pid, i);
     }
 
-    kernel_log_info("Process management initialized successfully");
+    for (int i = 0; i < 3; i++) {
+        pid = kproc_create(prog_ping, "ping", PROC_TYPE_USER);
+        kernel_log_debug("Created ping process %d", pid);
 
+        kproc_attach_tty(pid, (TTY_MAX - (pid % 2) - 1));
+    }
+
+    for (int i = 0; i < 3; i++) {
+        pid = kproc_create(prog_pong, "pong", PROC_TYPE_USER);
+        kernel_log_debug("Created pong process %d", pid);
+
+        kproc_attach_tty(pid, (TTY_MAX - (pid % 2) - 1));
+    }
 }
-
