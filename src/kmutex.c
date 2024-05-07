@@ -26,10 +26,15 @@ int kmutexes_init() {
     kernel_log_info("Initializing kernel mutexes");
 
     // Initialize the mutex table
+    memset(mutexes, 0, sizeof(mutexes));
 
     // Initialize the mutex queue
+    queue_init(&mutex_queue);
 
     // Fill the mutex queue
+    for (int i = 0; i < MUTEX_MAX; i++) {
+        queue_in(&mutex_queue, i);
+    }
 
     return 0;
 }
@@ -40,16 +45,29 @@ int kmutexes_init() {
  */
 int kmutex_init(void) {
     // Obtain a mutex id from the mutex queue
+    int mutex_id = queue_out(&mutex_queue);
+    if (mutex_id == QUEUE_EMPTY) {
+        return -1;
+    }
 
     // Ensure that the id is within the valid range
+    if (mutex_id < 0 || mutex_id >= MUTEX_MAX) {
+        return -1;
+    }
 
     // Pointer to the mutex table entry
+    mutex_t *mutex = &mutexes[mutex_id];
 
     // Initialize the mutex data structure (mutex_t + all members)
+    memset(mutex, 0, sizeof(mutex_t));
+    queue_init(&mutex->wait_queue);
+    mutex->allocated = 1;
+    mutex->lock_count = 0;
+    mutex->owner = NULL;
 
     // return the mutex id
 
-    return -1;
+    return mutex_id;
 }
 
 /**
