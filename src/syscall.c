@@ -2,7 +2,6 @@
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
  *
- *
  * System call APIs
  */
 #include "syscall.h"
@@ -15,24 +14,12 @@
 int _syscall0(int syscall) {
     int rc = -1;
 
-    // Note - Data received from the kernel:  
-    // If data is to be received from the kernel, such as return code or return value, 
-    // it will be exchanged using a register. In our implementation, we will only allow a single 
-    // integer value to be returned via the EAX register (if anything returned at all)
-
-    // Note - Data sent to kernel:
-    // If data is being sent to the kernel, it will be done using registers.
-    // EAX will always be used to send the system call indientifer to the kernel
-    // EBX, ECX and EDX can be used for up to 3 additional parameters 
-
-    // Reminder: movl var, %eax     // Moves contents of memory location var into register eax
-
-    asm("movl %1, %%eax;"           // Data copied into registers to be sent to the kernel
-        "int $0x80;"                // IRQ_SYSCALL (0x80)
-        "movl %%eax, %0;"           // Operands indicating data received from the kernel (only receiving from eax)
-        : "=g"(rc)                  // Operands indicating data sent to the kernel
-        : "g"(syscall)              // Register used in the operation so the compiler can
-        : "%eax");                  // optimize/save/restore
+    asm("movl %1, %%eax;"
+        "int $0x80;"
+        "movl %%eax, %0;"
+        : "=g"(rc)
+        : "g"(syscall)
+        : "%eax");
 
     return rc;
 }
@@ -47,11 +34,11 @@ int _syscall1(int syscall, int arg1) {
     int rc = -1;
 
     asm("movl %1, %%eax;"
-        "movl %2, %%ebx;"           // Same as _syscall0 but adding an argument
+        "movl %2, %%ebx;"
         "int $0x80;"
-        "movl %%eax, %0;"           // Only receiving eax from kernel
-        : "=g"(rc)                  // What is being sent to the kernel... 
-        : "g"(syscall), "g"(arg1)   // Same as _syscall0 but adding an argument
+        "movl %%eax, %0;"
+        : "=g"(rc)
+        : "g"(syscall), "g"(arg1)
         : "%eax", "%ebx");
 
     return rc;
@@ -69,12 +56,12 @@ int _syscall2(int syscall, int arg1, int arg2) {
 
     asm("movl %1, %%eax;"
         "movl %2, %%ebx;"
-        "movl %3, %%ecx;"           // Load the third argument into ECX
+        "movl %3, %%ecx;"
         "int $0x80;"
         "movl %%eax, %0;"
         : "=g"(rc)
-        : "g"(syscall), "g"(arg1), "g"(arg2) 
-        : "%eax", "%ebx", "%ecx");          
+        : "g"(syscall), "g"(arg1), "g"(arg2)
+        : "%eax", "%ebx", "%ecx");
 
     return rc;
 }
@@ -93,12 +80,12 @@ int _syscall3(int syscall, int arg1, int arg2, int arg3) {
     asm("movl %1, %%eax;"
         "movl %2, %%ebx;"
         "movl %3, %%ecx;"
-        "movl %4, %%edx;"           // Load the fourth argument into EDX
+        "movl %4, %%edx;"
         "int $0x80;"
         "movl %%eax, %0;"
         : "=g"(rc)
-        : "g"(syscall), "g"(arg1), "g"(arg2), "g"(arg3)   
-        : "%eax", "%ebx", "%ecx", "%edx");                
+        : "g"(syscall), "g"(arg1), "g"(arg2), "g"(arg3)
+        : "%eax", "%ebx", "%ecx", "%edx");
 
     return rc;
 }
@@ -125,7 +112,6 @@ int sys_get_name(char *name) {
  * @param seconds - number of seconds the process should sleep
  */
 void proc_sleep(int secs) {
-// Call the assembly routine that performs a syscall with one parameter (the seconds to sleep)
     _syscall1(SYSCALL_PROC_SLEEP, secs);
 }
 
@@ -185,4 +171,73 @@ int io_flush(int io) {
     return _syscall1(SYSCALL_IO_FLUSH, io);
 }
 
+/**
+ * Allocates a mutex from the kernel
+ * @return -1 on error, all other values indicate the mutex id
+ */
+int mutex_init(void) {
+    return -1;
+}
 
+/**
+ * Destroys a mutex
+ * @return -1 on error, 0 on sucecss
+ */
+int mutex_destroy(int mutex) {
+    return -1;
+}
+
+/**
+ * Locks the mutex
+ * @param mutex - mutex id
+ * @return -1 on error, 0 on sucecss
+ * @note If the mutex is already locked, process will block/wait.
+ */
+int mutex_lock(int mutex) {
+    return -1;
+}
+
+/**
+ * Unlocks the mutex
+ * @param mutex - mutex id
+ * @return -1 on error, 0 on sucecss
+ */
+int mutex_unlock(int mutex) {
+    return -1;
+}
+
+/**
+ * Allocates a semaphore from the kernel
+ * @param value - initial semaphore value
+ * @return -1 on error, all other values indicate the semaphore id
+ */
+int sem_init(int value) {
+    return -1;
+}
+
+/**
+ * Destroys a semaphore
+ * @param sem - semaphore id
+ * @return -1 on error, 0 on success
+ */
+int sem_destroy(int sem) {
+    return -1;
+}
+
+/**
+ * Waits on a semaphore
+ * @param sem - semaphore id
+ * @return -1 on error, otherwise the current semaphore count
+ */
+int sem_wait(int sem) {
+    return -1;
+}
+
+/**
+ * Posts a semaphore
+ * @param sem - semaphore id
+ * @return -1 on error, otherwise the current semaphore count
+ */
+int sem_post(int sem) {
+    return -1;
+}
