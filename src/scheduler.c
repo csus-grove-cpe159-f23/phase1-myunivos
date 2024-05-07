@@ -1,6 +1,7 @@
 /**
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
+ * 
  *
  * Kernel Process Handling
  */
@@ -14,33 +15,44 @@
 #include "kproc.h"
 #include "scheduler.h"
 #include "timer.h"
+
 #include "queue.h"
 
 // Process Queues
 queue_t run_queue;      // Run queue -> processes that will be scheduled to run
-queue_t sleep_queue;
+queue_t sleep_queue;    // Sleep queue -> processes that are currently sleeping
 
 /**
  * Scheduler timer callback
  */
 void scheduler_timer(void) {
+    int pid;
+    proc_t *proc;
+
+    // Update the active process' run time and CPU time
     if (active_proc) {
         active_proc->run_time++;
         active_proc->cpu_time++;
     }
 
-    int current_ticks = timer_get_ticks();
-    int pid;
+    for (int i = 0; i < sleep_queue.size; i++) {
+        pid = -1;
 
-    for(int i = 0; i < sleep_queue.size; i++) {
-        if (queue_out(&sleep_queue, &pid) == 0) {
-            proc_t *proc = pid_to_proc(pid);
+        if (queue_out(&sleep_queue, &pid) != 0) {
+            kernel_log_warn("Unable to queue out of sleep queue");
+            continue;
+        }
 
-            if (proc && current_ticks >= proc->sleep_time) {
-                scheduler_add(proc);
-            } else {
-                queue_in(&sleep_queue, pid);
-            }
+        proc = pid_to_proc(pid);
+        if (!proc) {
+            kernel_log_warn("Unable to look up process id %d", pid);
+            continue;
+        }
+
+        if (proc->sleep_time-- >= 0) {
+            queue_in(&sleep_queue, pid);
+        } else {
+            scheduler_add(proc);
         }
     }
 }
@@ -160,27 +172,23 @@ void scheduler_remove(proc_t *proc) {
     }
 }
 
-/**
- * Puts a process to sleep
- * @param proc - pointer to the process entry
- * @param time - number of ticks to sleep
- */
 void scheduler_sleep(proc_t *proc, int time) {
-    // Set the sleep time
-    // Set the process state to SLEEPING
-    // Remove the process from the scheduler
-    // Add the proces to the sleep queue
-    if(!proc){
+    if (!proc) {
+        kernel_panic("Invalid process");
         return;
     }
-    //calculate wake-up time
-    int current_ticks = timer_get_ticks();
-    proc->sleep_time = current_ticks + (time * 100);
-    //sleep time
-    //proc->sleep_time = time;
-    proc->state = SLEEPING; //set process state
-    scheduler_remove(proc); //remove process from scheduler
-    queue_in(&sleep_queue, proc->pid);
+
+    proc->sleep_time = time;
+    if (proc->state == SLEEPING) {
+        return;
+    }
+
+    scheduler_remove(proc);
+
+    proc->state = SLEEPING;
+    proc->scheduler_queue = &sleep_queue;
+
+    queue_in(proc->scheduler_queue, proc->pid);
 }
 
 /**
@@ -192,7 +200,9 @@ void scheduler_init(void) {
     /* Initialize the run queue */
     queue_init(&run_queue);
 
+    /* Initialize the sleep queue */
+    queue_init(&sleep_queue);
+
     /* Register the timer callback */
     timer_callback_register(&scheduler_timer, 1, -1);
 }
-
