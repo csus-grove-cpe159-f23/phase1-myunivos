@@ -1,7 +1,6 @@
 /**
  * CPE/CSC 159 - Operating System Pragmatics
  * California State University, Sacramento
- * 
  *
  * TTY Definitions
  */
@@ -46,15 +45,12 @@ int tty_get_active(void) {
     return active_tty->id;
 }
 
-/**
- * Returns a pointer to the specified TTY table entry
- * @param tty - TTY id
- * @return pointer to TTY table entry
- */
 struct tty_t *tty_get(int tty) {
     if (tty < 0 || tty >= TTY_MAX) {
-    return NULL;
+        kernel_panic("Invalid TTY %d", tty);
+        return NULL;
     }
+
     return &tty_table[tty];
 }
 
@@ -68,20 +64,16 @@ void tty_refresh(void) {
     }
 
     struct tty_t *tty = active_tty;
+    char c;
 
-    // Handle new I/O (characters in the output buffer)
-    // while not ringbuf_is_empty
-        // Read next character from ring buffer
-        // Send next characture to the tty screen buffer
+    // Handle new I/O
     while (!ringbuf_is_empty(&tty->io_output)) {
-        char c;
-        ringbuf_read(&tty->io_output, &c); // Read next character from output buffer
-        tty_update(c); // Update TTY with the character
+        if (ringbuf_read(&tty->io_output, &c) == 0) {
+            tty_update(c);
+        }
     }
 
-
     if (tty->refresh) {
-
         kernel_log_trace("tty[%d]: refreshing", tty->id);
 
         int x = 0;
@@ -111,16 +103,13 @@ void tty_input(char c) {
     if (!active_tty) {
         return;
     }
-    struct tty_t *tty = active_tty;
-    
-    // Handle echoing to the output buffer if the flag is set
-    if (tty->echo) {
-          ringbuf_write(&tty->io_output, c);
-    }
-    
-    tty_update(c); // Update TTY with the character regardless of echo
-}
 
+    ringbuf_write(&active_tty->io_input, c);
+
+    if (active_tty->echo) {
+        ringbuf_write(&active_tty->io_output, c);
+    }
+}
 
 /**
  * Updates the TTY with the given character
@@ -208,4 +197,3 @@ void tty_init(void) {
     // Update the screen on a regular interval (50 times per second right now)
     timer_callback_register(tty_refresh, 2, -1);
 }
-
