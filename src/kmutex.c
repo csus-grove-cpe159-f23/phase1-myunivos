@@ -45,8 +45,8 @@ int kmutexes_init() {
  */
 int kmutex_init(void) {
     // Obtain a mutex id from the mutex queue
-    int mutex_id = queue_out(&mutex_queue);
-    if (mutex_id == queue_is_empty) {
+    int mutex_id;
+    if (queue_out(&mutex_queue, &mutex_id) == queue_is_empty(&mutex_queue) {
         return -1;
     }
 
