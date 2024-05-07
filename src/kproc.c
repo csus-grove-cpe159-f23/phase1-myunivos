@@ -224,7 +224,7 @@ int kproc_attach_tty(int pid, int tty_number) {
     struct tty_t *tty = tty_get(tty_number);
 
     if (proc && tty) {
-        kernel_log_debug("Attaching process %d to TTY id to PID %d", proc->pid, tty_number);
+        kernel_log_debug("Attaching PID %d to TTY id %d", proc->pid, tty_number);
         proc->io[PROC_IO_IN] = &tty->io_input;
         proc->io[PROC_IO_OUT] = &tty->io_output;
         return 0;
