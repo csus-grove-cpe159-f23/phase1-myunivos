@@ -76,15 +76,24 @@ int kmutex_init(void) {
  * @return 0 on success, -1 on error
  */
 int kmutex_destroy(int id) {
+    mutex_t *mutex = &mutexes[id];
     // look up the mutex in the mutex table
+    if (id < 0 || id >= MUTEX_MAX) {
+        return -1;
+    }
 
     // If the mutex is locked, prevent it from being destroyed (return error)
+    if (mutex->lock_count > 0) {
+        return -1; // Error: the mutex is locked
+    }
 
     // Add the id back into the mutex queue to be re-used later
+    queue_in(&mutex_queue, id);
 
     // Clear the memory for the data structure
+    memset(mutex, 0, sizeof(mutex_t));
 
-    return -1;
+    return 0;
 }
 
 /**
@@ -93,8 +102,12 @@ int kmutex_destroy(int id) {
  * @return -1 on error, otherwise the current lock count
  */
 int kmutex_lock(int id) {
+    mutex_t *mutex = &mutexes[id];
     // look up the mutex in the mutex table
-
+    if (id < 0 || id >= MUTEX_MAX) {
+        return -1;
+    }
+    proc_t *active_process = active_proc;
     // If the mutex is already locked
     //   1. Set the active process state to WAITING
     //   2. Add the process to the mutex wait queue (so it can take
@@ -104,12 +117,26 @@ int kmutex_lock(int id) {
 
     // If the mutex is not locked
     //   1. set the mutex owner to the active process
+    
+    if (mutex->lock_count > 0) {
+        // Add the process to the mutex wait queue
+        if (active_process) {
+            queue_in(&mutex->wait_queue, active_process->pid);
+            // Set the state of the active process to WAITING
+            active_process->state = WAITING;
+            // Remove the process from the scheduler
+            scheduler_remove(active_process);
+        }
+    } else {
+        // Set the mutex owner to the current process
+        mutex->owner = active_process;
+    }
 
     // Increment the lock count
+    mutex->lock_count++;
 
     // Return the mutex lock count
-
-    return -1;
+    return mutex->lock_count;
 }
 
 /**
@@ -118,11 +145,24 @@ int kmutex_lock(int id) {
  * @return -1 on error, otherwise the current lock count
  */
 int kmutex_unlock(int id) {
+    mutex_t *mutex = &mutexes[id];
     // look up the mutex in the mutex table
+    if (id < 0 || id >= MUTEX_MAX) {
+        return -1;
+    }
+    proc_t *active_process = active_proc;
 
     // If the mutex is not locked, there is nothing to do
+    if (mutex->lock_count == 0) {
+        return 0;
+    }
+    // If the mutex is held but not owned by the calling process, return error
+    if (mutex->owner != active_process) {
+        return -1; // Error: the mutex is held but not owned by the calling process
+    }
 
     // Decrement the lock count
+    mutex->lock_count--;
 
     // If there are no more locks held:
     //    1. clear the owner of the mutex
@@ -132,7 +172,13 @@ int kmutex_unlock(int id) {
     //    2. Add the process back to the scheduler
     //    3. set the owner of the of the mutex to the process
 
+    if (mutex->lock_count == 0) {
+        mutex->owner = NULL;
+    } else {
+        int waiting_process = queue_out(&mutex->wait_queue);
+        mutex->owner = waiting_process;
+        scheduler_add(waiting_process); 
+    }
     // return the mutex lock count
-
-    return -1;
+    return mutex->lock_count;
 }
