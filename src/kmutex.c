@@ -62,7 +62,7 @@ int kmutex_init(void) {
     memset(mutex, 0, sizeof(mutex_t));
     queue_init(&mutex->wait_queue);
     mutex->allocated = 1;
-    mutex->lock_count = 0;
+    mutex->locks = 0;
     mutex->owner = NULL;
 
     // return the mutex id
@@ -83,7 +83,7 @@ int kmutex_destroy(int id) {
     }
 
     // If the mutex is locked, prevent it from being destroyed (return error)
-    if (mutex->lock_count > 0) {
+    if (mutex->locks > 0) {
         return -1; // Error: the mutex is locked
     }
 
@@ -118,7 +118,7 @@ int kmutex_lock(int id) {
     // If the mutex is not locked
     //   1. set the mutex owner to the active process
     
-    if (mutex->lock_count > 0) {
+    if (mutex->locks > 0) {
         // Add the process to the mutex wait queue
         if (active_process) {
             queue_in(&mutex->wait_queue, active_process->pid);
@@ -133,10 +133,10 @@ int kmutex_lock(int id) {
     }
 
     // Increment the lock count
-    mutex->lock_count++;
+    mutex->locks++;
 
     // Return the mutex lock count
-    return mutex->lock_count;
+    return mutex->locks;
 }
 
 /**
@@ -153,7 +153,7 @@ int kmutex_unlock(int id) {
     proc_t *active_process = active_proc;
 
     // If the mutex is not locked, there is nothing to do
-    if (mutex->lock_count == 0) {
+    if (mutex->locks == 0) {
         return 0;
     }
     // If the mutex is held but not owned by the calling process, return error
@@ -162,7 +162,7 @@ int kmutex_unlock(int id) {
     }
 
     // Decrement the lock count
-    mutex->lock_count--;
+    mutex->locks--;
 
     // If there are no more locks held:
     //    1. clear the owner of the mutex
@@ -172,7 +172,7 @@ int kmutex_unlock(int id) {
     //    2. Add the process back to the scheduler
     //    3. set the owner of the of the mutex to the process
 
-    if (mutex->lock_count == 0) {
+    if (mutex->locks == 0) {
         mutex->owner = NULL;
     } else {
         int waiting_process = queue_out(&mutex->wait_queue);
@@ -180,5 +180,5 @@ int kmutex_unlock(int id) {
         scheduler_add(waiting_process); 
     }
     // return the mutex lock count
-    return mutex->lock_count;
+    return mutex->locks;
 }
