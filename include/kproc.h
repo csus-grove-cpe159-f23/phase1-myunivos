@@ -104,7 +104,7 @@ proc_t *pid_to_proc(int pid);
  */
 proc_t *entry_to_proc(int entry);
 
-void kproc_attach(int pid, int driver, int id);
+//void kproc_attach(int pid, int driver, int id);
 
 /**
  * Test process
