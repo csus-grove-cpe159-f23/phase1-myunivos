@@ -182,7 +182,7 @@ int kmutex_unlock(int id) {
         if (queue_out(&mutex->wait_queue, &waiting_pid) == 0) {
             proc_t *waiting_proc = pid_to_proc(waiting_pid);
             if (waiting_proc) {
-                waiting_proc->state = READY;
+                //waiting_proc->state = READY;
                 scheduler_add(waiting_proc);
                 mutex->owner = waiting_proc;
             }
