@@ -33,7 +33,7 @@ typedef enum state_t {
     NONE,               // Process has no state (doesn't exist)
     IDLE,               // Process is idle (not scheduled)
     ACTIVE,             // Process is active (scheduled)
-    SLEEPING            // Process is sleeping (not scheduled)
+    SLEEPING,            // Process is sleeping (not scheduled)
     WAITING,            // Process is waiting (not scheduled)
 } state_t;
 
