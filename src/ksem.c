@@ -11,6 +11,7 @@
 #include "ksem.h"
 #include "queue.h"
 #include "scheduler.h"
+#include "kproc.h"
 
 // Table of all semephores
 sem_t semaphores[SEM_MAX];
