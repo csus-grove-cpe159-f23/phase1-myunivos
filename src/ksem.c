@@ -149,10 +149,23 @@ int ksem_post(int id) {
     semaphores[id].count++;
     if (!queue_is_empty(&semaphores[id].wait_queue)) {
         int pid;
-        queue_out(&semaphores[id].wait_queue, &pid);
+        if (queue_out(&semaphores[id].wait_queue, &pid) != 0) {
+            // Error handling if queue_out fails
+            return -1;
+        }
+        // Check if pid is a valid process ID
+        if (pid >= 0 && pid < PROC_MAX && proc_table[pid].state != NONE) {
+            proc_t *proc = &proc_table[pid];
+            scheduler_add(proc);
+            semaphores[id].count--;
+        } else {
+            // Error handling if pid is not valid or the corresponding process doesn't exist
+            return -1;
+        }
+        /*queue_out(&semaphores[id].wait_queue, &pid);
         proc_t *proc = &proc_table[pid];
         scheduler_add(proc);
-        semaphores[id].count--;
+        semaphores[id].count--;*/
     }
 
     return semaphores[id].count;
