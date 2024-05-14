@@ -11,7 +11,7 @@
 #include "ksem.h"
 #include "queue.h"
 #include "scheduler.h"
-//#include "kproc.h"
+#include "kproc.h"
 
 // Table of all semephores
 sem_t semaphores[SEM_MAX];
@@ -20,7 +20,7 @@ sem_t semaphores[SEM_MAX];
 queue_t sem_queue;
 
 // Process table
-proc_t proc_table[PROC_MAX];
+extern proc_t proc_table[PROC_MAX];
 
 /**
  * Initializes kernel semaphore data structures
