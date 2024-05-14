@@ -46,7 +46,7 @@ int kmutexes_init() {
 int kmutex_init(void) {
     // Obtain a mutex id from the mutex queue
     int mutex_id;
-    if (queue_out(&mutex_queue, &mutex_id) == -1 || queue_is_empty(&mutex_queue) {
+    if (queue_out(&mutex_queue, &mutex_id) == -1 || queue_is_empty(&mutex_queue)) {
         return -1;
     }
 
@@ -175,9 +175,18 @@ int kmutex_unlock(int id) {
     if (mutex->locks == 0) {
         mutex->owner = NULL;
     } else {
-        int waiting_process = queue_out(&mutex->wait_queue);
+        /*int waiting_process = queue_out(&mutex->wait_queue, &waiting_process);
         mutex->owner = waiting_process;
-        scheduler_add(waiting_process); 
+        scheduler_add(waiting_process);*/
+        int waiting_pid;
+        if (queue_out(&mutex->wait_queue, &waiting_pid) == 0) {
+            proc_t *waiting_proc = pid_to_proc(waiting_pid);
+            if (waiting_proc) {
+                waiting_proc->state = READY;
+                scheduler_add(waiting_proc);
+                mutex->owner = waiting_proc;
+            }
+        }
     }
     // return the mutex lock count
     return mutex->locks;
