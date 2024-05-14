@@ -11,13 +11,16 @@
 #include "ksem.h"
 #include "queue.h"
 #include "scheduler.h"
-#include "kproc.h"
+//#include "kproc.h"
 
 // Table of all semephores
 sem_t semaphores[SEM_MAX];
 
 // semaphore ids to be allocated
 queue_t sem_queue;
+
+// Process table
+proc_t proc_table[PROC_MAX];
 
 /**
  * Initializes kernel semaphore data structures
