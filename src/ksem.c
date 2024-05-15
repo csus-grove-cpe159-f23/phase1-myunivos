@@ -161,12 +161,11 @@ int ksem_post(int id) {
         if (pid >= 0 && pid < PROC_MAX && proc_table[pid].state != NONE) {
             proc_t *proc = &proc_table[pid];
             scheduler_add(proc);
-            //semaphores[id].count--;
+            semaphores[id].count--;
         } else {
             // Error handling if pid is not valid or the corresponding process doesn't exist
             return -1;
         }
-        semaphores[id].count--;
         /*queue_out(&semaphores[id].wait_queue, &pid);
         proc_t *proc = &proc_table[pid];
         scheduler_add(proc);
